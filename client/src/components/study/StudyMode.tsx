@@ -119,25 +119,35 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
   const handleRating = async (rating: 'again' | 'hard' | 'good' | 'easy') => {
     if (!dueCards || dueCards.length === 0) return;
     
-    const currentCard = dueCards[currentCardIndex];
+    // Bail early if we've already completed all cards
+    if (completed.length >= dueCards.length) {
+      toast({
+        title: "Study Complete",
+        description: "All cards have been reviewed. Return to deck list.",
+      });
+      return;
+    }
+    
+    const card = dueCards[currentCardIndex];
     
     try {
-      await updateProgress.mutateAsync({ cardId: currentCard.id, rating });
-      setCompleted([...completed, currentCard.id]);
+      await updateProgress.mutateAsync({ cardId: card.id, rating });
       
-      // Move to next card or finish if done
-      if (currentCardIndex < dueCards.length - 1) {
-        setCurrentCardIndex(prev => prev + 1);
-      } else {
-        // We're done with all cards
+      // Add to completed list
+      const newCompleted = [...completed, card.id];
+      setCompleted(newCompleted);
+      
+      // Check if this was the last card
+      const isLastCard = currentCardIndex >= dueCards.length - 1 || newCompleted.length >= dueCards.length;
+      
+      if (isLastCard) {
+        // We're done with all cards - don't increase the index
         toast({
           title: "Study Session Complete",
           description: "You've reviewed all the cards for today!",
         });
-        // Don't try to access next card since we're at the end
-        setTimeout(() => {
-          navigate('/decks');
-        }, 1500);
+      } else {
+        setCurrentCardIndex(prev => prev + 1);
       }
     } catch (error) {
       console.error("Failed to update study progress:", error);
@@ -196,11 +206,13 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     );
   }
 
-  const currentCard = dueCards[currentCardIndex];
-  const progress = (completed.length / dueCards.length) * 100;
-
   // Check if we've completed all cards
   const allCardsCompleted = completed.length === dueCards.length && dueCards.length > 0;
+  
+  // Only access currentCard if we haven't completed all cards
+  // Use ! (non-null assertion) since we've already checked dueCards.length > 0 above
+  const currentCard = dueCards[currentCardIndex];
+  const progress = (completed.length / dueCards.length) * 100;
 
   return (
     <div>
@@ -232,24 +244,26 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
         // Show study interface
         <div className="flex flex-col md:flex-row gap-8">
           <div className="md:w-3/4">
-            <StudyCard 
-              front={currentCard.front}
-              back={
-                <>
-                  <div className="text-4xl font-jp font-medium text-gray-800 mb-3">{currentCard.front}</div>
-                  <div className="font-medium text-gray-800 text-2xl mb-2">{currentCard.back}</div>
-                  <div className="text-gray-600 mb-3">{currentCard.partOfSpeech}, {currentCard.reading}</div>
-                  {currentCard.example && (
-                    <>
-                      <div className="text-gray-600 italic">{currentCard.example}</div>
-                      <div className="text-gray-600 italic">{currentCard.exampleTranslation}</div>
-                    </>
-                  )}
-                </>
-              }
-              cardNumber={currentCardIndex + 1}
-              totalCards={dueCards.length}
-            />
+            {currentCard && (
+              <StudyCard 
+                front={currentCard.front}
+                back={
+                  <>
+                    <div className="text-4xl font-jp font-medium text-gray-800 mb-3">{currentCard.front}</div>
+                    <div className="font-medium text-gray-800 text-2xl mb-2">{currentCard.back}</div>
+                    <div className="text-gray-600 mb-3">{currentCard.partOfSpeech}, {currentCard.reading}</div>
+                    {currentCard.example && (
+                      <>
+                        <div className="text-gray-600 italic">{currentCard.example}</div>
+                        <div className="text-gray-600 italic">{currentCard.exampleTranslation}</div>
+                      </>
+                    )}
+                  </>
+                }
+                cardNumber={currentCardIndex + 1}
+                totalCards={dueCards.length}
+              />
+            )}
 
             <div className="mt-6 grid grid-cols-4 gap-4">
               <Button 
