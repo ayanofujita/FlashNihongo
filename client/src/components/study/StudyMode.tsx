@@ -38,8 +38,15 @@ const AGAIN_INTERVAL = 0.1; // ~0.1 days = ~2.4 hours
 const StudyMode = ({ deckId }: StudyModeProps) => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  
+  // Track the cards that have been completed
   const [completed, setCompleted] = useState<number[]>([]);
+  
+  // Store cards to study separately from the query result
+  const [cardsToStudy, setCardsToStudy] = useState<Card[]>([]);
+  
+  // Track the current card being studied (store the full card not just the index)
+  const [currentCard, setCurrentCard] = useState<Card | null>(null);
 
   const { data: deck, isLoading: isDeckLoading } = useQuery<Deck>({
     queryKey: [`/api/decks/${deckId}`],
@@ -53,6 +60,13 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
         throw new Error('Failed to fetch due cards');
       }
       return response.json();
+    },
+    onSuccess: (data) => {
+      if (data && data.length > 0 && cardsToStudy.length === 0) {
+        // Set the cards to study only once when data is loaded
+        setCardsToStudy(data);
+        setCurrentCard(data[0]);
+      }
     }
   });
 
@@ -118,10 +132,10 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
 
   // Function to handle rating and move to the next card
   const handleRating = async (rating: 'again' | 'hard' | 'good' | 'easy') => {
-    if (!dueCards || dueCards.length === 0) return;
+    if (!currentCard) return;
     
     // Bail early if we've already completed all cards
-    if (completed.length >= dueCards.length) {
+    if (completed.length >= cardsToStudy.length) {
       toast({
         title: "Study Complete",
         description: "All cards have been reviewed. Return to deck list.",
@@ -129,22 +143,24 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       return;
     }
     
-    const card = dueCards[currentCardIndex];
-    
     try {
       // Update the progress in the backend
-      await updateProgress.mutateAsync({ cardId: card.id, rating });
+      await updateProgress.mutateAsync({ cardId: currentCard.id, rating });
       
       // Add to completed list
-      const newCompleted = [...completed, card.id];
-      setCompleted(newCompleted);
+      setCompleted(prev => [...prev, currentCard.id]);
       
-      // Check if this was the last card
-      const isLastCard = currentCardIndex >= dueCards.length - 1 || newCompleted.length >= dueCards.length;
+      // Find the next card to study (one that's not in completed)
+      const remainingCards = cardsToStudy.filter(card => 
+        !completed.includes(card.id) && card.id !== currentCard.id
+      );
       
-      if (!isLastCard) {
-        // Move to the next card immediately
-        setCurrentCardIndex(prev => prev + 1);
+      if (remainingCards.length > 0) {
+        // Move to the next card
+        setCurrentCard(remainingCards[0]);
+      } else {
+        // All cards completed
+        setCurrentCard(null);
       }
     } catch (error) {
       console.error("Failed to update study progress:", error);
@@ -193,7 +209,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     );
   }
 
-  if (!dueCards || dueCards.length === 0) {
+  if (!cardsToStudy || cardsToStudy.length === 0) {
     return (
       <div className="text-center py-10">
         <h2 className="text-xl font-bold mb-4">Study: {deck?.name}</h2>
@@ -204,12 +220,15 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
   }
 
   // Check if we've completed all cards
-  const allCardsCompleted = completed.length === dueCards.length && dueCards.length > 0;
+  const allCardsCompleted = completed.length === cardsToStudy.length;
   
-  // Only access currentCard if we haven't completed all cards
-  // Use ! (non-null assertion) since we've already checked dueCards.length > 0 above
-  const currentCard = dueCards[currentCardIndex];
-  const progress = (completed.length / dueCards.length) * 100;
+  // Calculate progress
+  const progress = (completed.length / cardsToStudy.length) * 100;
+  
+  // Calculate card position
+  const currentCardNumber = currentCard 
+    ? cardsToStudy.findIndex(card => card.id === currentCard.id) + 1 
+    : 0;
 
   return (
     <div>
@@ -232,7 +251,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
         // Show completion screen
         <div className="bg-white rounded-lg shadow p-8 border border-gray-200 text-center">
           <h3 className="text-xl font-bold mb-4">Study Session Complete!</h3>
-          <p className="text-gray-600 mb-6">You've reviewed all {dueCards.length} cards due for today.</p>
+          <p className="text-gray-600 mb-6">You've reviewed all {cardsToStudy.length} cards due for today.</p>
           <Button onClick={() => navigate('/decks')} className="bg-blue-600 hover:bg-blue-700">
             Return to Decks
           </Button>
@@ -257,8 +276,8 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
                     )}
                   </>
                 }
-                cardNumber={currentCardIndex + 1}
-                totalCards={dueCards.length}
+                cardNumber={completed.length + 1}
+                totalCards={cardsToStudy.length}
               />
             )}
 
@@ -267,6 +286,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
                 className="flex flex-col items-center justify-center bg-red-100 text-red-800 rounded-lg py-3 px-2 hover:bg-red-200 transition" 
                 variant="ghost"
                 onClick={() => handleRating('again')}
+                disabled={!currentCard}
               >
                 <span className="text-sm font-medium">Again</span>
                 <span className="text-xs text-red-600 mt-1">{getIntervalText('again')}</span>
@@ -275,6 +295,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
                 className="flex flex-col items-center justify-center bg-amber-100 text-amber-800 rounded-lg py-3 px-2 hover:bg-amber-200 transition" 
                 variant="ghost"
                 onClick={() => handleRating('hard')}
+                disabled={!currentCard}
               >
                 <span className="text-sm font-medium">Hard</span>
                 <span className="text-xs text-amber-600 mt-1">{getIntervalText('hard')}</span>
@@ -283,6 +304,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
                 className="flex flex-col items-center justify-center bg-blue-100 text-blue-800 rounded-lg py-3 px-2 hover:bg-blue-200 transition" 
                 variant="ghost"
                 onClick={() => handleRating('good')}
+                disabled={!currentCard}
               >
                 <span className="text-sm font-medium">Good</span>
                 <span className="text-xs text-blue-600 mt-1">{getIntervalText('good')}</span>
@@ -291,6 +313,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
                 className="flex flex-col items-center justify-center bg-green-100 text-green-800 rounded-lg py-3 px-2 hover:bg-green-200 transition" 
                 variant="ghost"
                 onClick={() => handleRating('easy')}
+                disabled={!currentCard}
               >
                 <span className="text-sm font-medium">Easy</span>
                 <span className="text-xs text-green-600 mt-1">{getIntervalText('easy')}</span>
@@ -304,7 +327,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
             <div className="mb-4">
               <div className="flex justify-between text-sm text-gray-600 mb-1">
                 <span>Today's Progress</span>
-                <span>{completed.length}/{dueCards.length}</span>
+                <span>{completed.length}/{cardsToStudy.length}</span>
               </div>
               <Progress value={progress} className="h-2.5" />
             </div>
@@ -312,15 +335,15 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
             <div className="grid grid-cols-2 gap-2 mb-6">
               <div className="bg-gray-50 p-3 rounded">
                 <div className="text-xs text-gray-500">Due Today</div>
-                <div className="text-lg font-medium">{dueCards.length}</div>
+                <div className="text-lg font-medium">{cardsToStudy.length}</div>
               </div>
               <div className="bg-gray-50 p-3 rounded">
                 <div className="text-xs text-gray-500">Completed</div>
                 <div className="text-lg font-medium">{completed.length}</div>
               </div>
               <div className="bg-gray-50 p-3 rounded">
-                <div className="text-xs text-gray-500">Learned</div>
-                <div className="text-lg font-medium">--</div>
+                <div className="text-xs text-gray-500">Remaining</div>
+                <div className="text-lg font-medium">{cardsToStudy.length - completed.length}</div>
               </div>
               <div className="bg-gray-50 p-3 rounded">
                 <div className="text-xs text-gray-500">Retention</div>
