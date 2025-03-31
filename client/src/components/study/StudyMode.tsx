@@ -116,8 +116,13 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     }
   });
 
+  // Add state to track if the card is flipped and if we're in a transition
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Function to control the card flipping and rating process
   const handleRating = async (rating: 'again' | 'hard' | 'good' | 'easy') => {
-    if (!dueCards || dueCards.length === 0) return;
+    if (!dueCards || dueCards.length === 0 || isTransitioning) return;
     
     // Bail early if we've already completed all cards
     if (completed.length >= dueCards.length) {
@@ -128,9 +133,43 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       return;
     }
     
+    // Start transition and prevent further clicks
+    setIsTransitioning(true);
+    
     const card = dueCards[currentCardIndex];
     
     try {
+      // Show a feedback toast based on difficulty
+      let feedbackColor = "";
+      let feedbackMessage = "";
+      
+      switch (rating) {
+        case 'again':
+          feedbackColor = "bg-red-100 border-red-300 text-red-800";
+          feedbackMessage = "You'll see this card again soon.";
+          break;
+        case 'hard':
+          feedbackColor = "bg-amber-100 border-amber-300 text-amber-800";
+          feedbackMessage = "You'll review this card again in about a day.";
+          break;
+        case 'good':
+          feedbackColor = "bg-blue-100 border-blue-300 text-blue-800";
+          feedbackMessage = "Good job! You'll see this card again in a few days.";
+          break;
+        case 'easy':
+          feedbackColor = "bg-green-100 border-green-300 text-green-800";
+          feedbackMessage = "Excellent! This card will appear again in about a week.";
+          break;
+      }
+      
+      toast({
+        title: `Marked as ${rating}`,
+        description: feedbackMessage,
+        variant: "default",
+        className: `${feedbackColor} font-medium border`,
+      });
+      
+      // Update the progress in the backend
       await updateProgress.mutateAsync({ cardId: card.id, rating });
       
       // Add to completed list
@@ -141,13 +180,27 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       const isLastCard = currentCardIndex >= dueCards.length - 1 || newCompleted.length >= dueCards.length;
       
       if (isLastCard) {
-        // We're done with all cards - don't increase the index
-        toast({
-          title: "Study Session Complete",
-          description: "You've reviewed all the cards for today!",
-        });
+        // We're done with all cards - show completion message
+        setTimeout(() => {
+          toast({
+            title: "Study Session Complete",
+            description: "You've reviewed all the cards for today!",
+            duration: 3000,
+          });
+          
+          // Keep the last card visible for a moment, then show completion UI
+          setTimeout(() => {
+            setCompleted([...completed, card.id]);
+          }, 1500);
+        }, 1000);
       } else {
-        setCurrentCardIndex(prev => prev + 1);
+        // Move to the next card after a short delay
+        setTimeout(() => {
+          setCurrentCardIndex(prev => prev + 1);
+          // Reset the flip state for the next card
+          setIsFlipped(false);
+          setIsTransitioning(false);
+        }, 1500);
       }
     } catch (error) {
       console.error("Failed to update study progress:", error);
@@ -156,6 +209,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
         description: "Something went wrong. Please try again.",
         variant: "destructive"
       });
+      setIsTransitioning(false);
     }
   };
 
@@ -262,38 +316,45 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
                 }
                 cardNumber={currentCardIndex + 1}
                 totalCards={dueCards.length}
+                isFlipped={isFlipped}
+                isTransitioning={isTransitioning}
+                onFlip={() => setIsFlipped(!isFlipped)}
               />
             )}
 
             <div className="mt-6 grid grid-cols-4 gap-4">
               <Button 
-                className="flex flex-col items-center justify-center bg-red-100 text-red-800 rounded-lg py-3 px-2 hover:bg-red-200 transition" 
+                className={`flex flex-col items-center justify-center bg-red-100 text-red-800 rounded-lg py-3 px-2 hover:bg-red-200 transition ${isTransitioning ? 'opacity-50 cursor-not-allowed' : ''}`} 
                 variant="ghost"
                 onClick={() => handleRating('again')}
+                disabled={isTransitioning}
               >
                 <span className="text-sm font-medium">Again</span>
                 <span className="text-xs text-red-600 mt-1">{getIntervalText('again')}</span>
               </Button>
               <Button 
-                className="flex flex-col items-center justify-center bg-amber-100 text-amber-800 rounded-lg py-3 px-2 hover:bg-amber-200 transition" 
+                className={`flex flex-col items-center justify-center bg-amber-100 text-amber-800 rounded-lg py-3 px-2 hover:bg-amber-200 transition ${isTransitioning ? 'opacity-50 cursor-not-allowed' : ''}`} 
                 variant="ghost"
                 onClick={() => handleRating('hard')}
+                disabled={isTransitioning}
               >
                 <span className="text-sm font-medium">Hard</span>
                 <span className="text-xs text-amber-600 mt-1">{getIntervalText('hard')}</span>
               </Button>
               <Button 
-                className="flex flex-col items-center justify-center bg-blue-100 text-blue-800 rounded-lg py-3 px-2 hover:bg-blue-200 transition" 
+                className={`flex flex-col items-center justify-center bg-blue-100 text-blue-800 rounded-lg py-3 px-2 hover:bg-blue-200 transition ${isTransitioning ? 'opacity-50 cursor-not-allowed' : ''}`} 
                 variant="ghost"
                 onClick={() => handleRating('good')}
+                disabled={isTransitioning}
               >
                 <span className="text-sm font-medium">Good</span>
                 <span className="text-xs text-blue-600 mt-1">{getIntervalText('good')}</span>
               </Button>
               <Button 
-                className="flex flex-col items-center justify-center bg-green-100 text-green-800 rounded-lg py-3 px-2 hover:bg-green-200 transition" 
+                className={`flex flex-col items-center justify-center bg-green-100 text-green-800 rounded-lg py-3 px-2 hover:bg-green-200 transition ${isTransitioning ? 'opacity-50 cursor-not-allowed' : ''}`} 
                 variant="ghost"
                 onClick={() => handleRating('easy')}
+                disabled={isTransitioning}
               >
                 <span className="text-sm font-medium">Easy</span>
                 <span className="text-xs text-green-600 mt-1">{getIntervalText('easy')}</span>
