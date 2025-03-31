@@ -4,7 +4,7 @@ import DeckCard from "./DeckCard";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import DeckForm from "./DeckForm";
 
 interface Deck {
@@ -107,6 +107,7 @@ const DeckList = () => {
 
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent>
+          <DialogTitle>Create New Deck</DialogTitle>
           <DeckForm onSuccess={() => setCreateDialogOpen(false)} />
         </DialogContent>
       </Dialog>

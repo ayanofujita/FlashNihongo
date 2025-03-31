@@ -127,15 +127,25 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       
       // Move to next card or finish if done
       if (currentCardIndex < dueCards.length - 1) {
-        setCurrentCardIndex(currentCardIndex + 1);
+        setCurrentCardIndex(prev => prev + 1);
       } else {
+        // We're done with all cards
         toast({
           title: "Study Session Complete",
           description: "You've reviewed all the cards for today!",
         });
+        // Don't try to access next card since we're at the end
+        setTimeout(() => {
+          navigate('/decks');
+        }, 1500);
       }
     } catch (error) {
       console.error("Failed to update study progress:", error);
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 

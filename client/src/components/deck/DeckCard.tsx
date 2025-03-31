@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trash2, Edit, GraduationCap, HelpCircle, Layers, Clock } from "lucide-react";
+import { Trash2, Edit, GraduationCap, HelpCircle, Layers, Clock, Plus } from "lucide-react";
 import { 
   AlertDialog, 
   AlertDialogAction, 
@@ -16,7 +16,9 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import DeckForm from "./DeckForm";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import CardForm from "./CardForm";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface DeckCardProps {
   id: number;
@@ -31,6 +33,7 @@ const DeckCard = ({ id, name, description, cardCount, lastStudied }: DeckCardPro
   const { toast } = useToast();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [addCardDialogOpen, setAddCardDialogOpen] = useState(false);
 
   const formatLastStudied = () => {
     if (!lastStudied) return "Never studied";
@@ -69,12 +72,44 @@ const DeckCard = ({ id, name, description, cardCount, lastStudied }: DeckCardPro
           <div className="flex justify-between items-start">
             <h3 className="text-lg font-bold text-gray-800">{name}</h3>
             <div className="flex space-x-2">
-              <Button variant="ghost" size="icon" onClick={() => setEditDialogOpen(true)}>
-                <Edit className="h-4 w-4 text-gray-400 hover:text-gray-600" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => setDeleteDialogOpen(true)}>
-                <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={() => setAddCardDialogOpen(true)}>
+                      <Plus className="h-4 w-4 text-gray-400 hover:text-green-500" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Add card to deck</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={() => setEditDialogOpen(true)}>
+                      <Edit className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Edit deck</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteDialogOpen(true)}>
+                      <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Delete deck</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
           <p className="text-gray-600 mt-2 text-sm">{description}</p>
@@ -125,10 +160,28 @@ const DeckCard = ({ id, name, description, cardCount, lastStudied }: DeckCardPro
       {/* Edit deck dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
+          <DialogTitle>Edit Deck</DialogTitle>
           <DeckForm 
             deckId={id} 
             defaultValues={{ name, description: description || "" }}
             onSuccess={() => setEditDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Add card dialog */}
+      <Dialog open={addCardDialogOpen} onOpenChange={setAddCardDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogTitle>Add Card to "{name}"</DialogTitle>
+          <CardForm 
+            deckId={id}
+            onSuccess={() => {
+              // Keep the dialog open so users can add multiple cards
+              toast({
+                title: "Card added",
+                description: "Add another card or close this dialog when finished.",
+              });
+            }}
           />
         </DialogContent>
       </Dialog>

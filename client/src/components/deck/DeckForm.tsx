@@ -78,8 +78,6 @@ const DeckForm = ({ deckId, defaultValues, onSuccess }: DeckFormProps) => {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="space-y-4">
-          <h2 className="text-xl font-bold">{isEditMode ? "Edit Deck" : "Create New Deck"}</h2>
-          
           <FormField
             control={form.control}
             name="name"
