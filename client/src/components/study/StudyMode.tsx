@@ -175,6 +175,12 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       } else {
         // All cards completed
         setCurrentCard(null);
+        
+        // Display a completion toast
+        toast({
+          title: "Study Complete",
+          description: "All cards have been reviewed. Great job!",
+        });
       }
     } catch (error) {
       console.error("Failed to update study progress:", error);
@@ -233,8 +239,8 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     );
   }
 
-  // Check if we've completed all cards
-  const allCardsCompleted = completed.length === cardsToStudy.length;
+  // Check if we've completed all cards or there's no current card (means we've gone through all cards)
+  const allCardsCompleted = (completed.length > 0 && completed.length >= cardsToStudy.length) || (!currentCard && cardsToStudy.length > 0 && completed.length > 0);
   
   // Calculate progress
   const progress = (completed.length / cardsToStudy.length) * 100;
