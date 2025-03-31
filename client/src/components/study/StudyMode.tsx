@@ -74,6 +74,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
   useEffect(() => {
     if (dueCards && dueCards.length > 0) {
       console.log("Setting cards to study:", dueCards.length);
+      console.log("Due cards:", dueCards); // Debug log to see all cards
       setCardsToStudy(dueCards);
       
       // Only set the current card if we don't already have one
@@ -81,6 +82,8 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       if (!currentCard) {
         setCurrentCard(dueCards[0]);
       }
+    } else {
+      console.log("No cards to study or dueCards is empty");
     }
   }, [dueCards, currentCard]);
 
@@ -296,8 +299,8 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
                     )}
                   </>
                 }
-                cardNumber={completed.length + 1}
-                totalCards={cardsToStudy.length}
+                cardNumber={cardsToStudy.filter(card => !completed.includes(card.id)).length}
+                totalCards={cardsToStudy.filter(card => !completed.includes(card.id)).length}
               />
             )}
 
