@@ -199,6 +199,9 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
   const currentCard = dueCards[currentCardIndex];
   const progress = (completed.length / dueCards.length) * 100;
 
+  // Check if we've completed all cards
+  const allCardsCompleted = completed.length === dueCards.length && dueCards.length > 0;
+
   return (
     <div>
       <div className="mb-6 flex justify-between items-center">
@@ -216,110 +219,122 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-8">
-        <div className="md:w-3/4">
-          <StudyCard 
-            front={currentCard.front}
-            back={
-              <>
-                <div className="text-4xl font-jp font-medium text-gray-800 mb-3">{currentCard.front}</div>
-                <div className="font-medium text-gray-800 text-2xl mb-2">{currentCard.back}</div>
-                <div className="text-gray-600 mb-3">{currentCard.partOfSpeech}, {currentCard.reading}</div>
-                {currentCard.example && (
-                  <>
-                    <div className="text-gray-600 italic">{currentCard.example}</div>
-                    <div className="text-gray-600 italic">{currentCard.exampleTranslation}</div>
-                  </>
-                )}
-              </>
-            }
-            cardNumber={currentCardIndex + 1}
-            totalCards={dueCards.length}
-          />
+      {allCardsCompleted ? (
+        // Show completion screen
+        <div className="bg-white rounded-lg shadow p-8 border border-gray-200 text-center">
+          <h3 className="text-xl font-bold mb-4">Study Session Complete!</h3>
+          <p className="text-gray-600 mb-6">You've reviewed all {dueCards.length} cards due for today.</p>
+          <Button onClick={() => navigate('/decks')} className="bg-blue-600 hover:bg-blue-700">
+            Return to Decks
+          </Button>
+        </div>
+      ) : (
+        // Show study interface
+        <div className="flex flex-col md:flex-row gap-8">
+          <div className="md:w-3/4">
+            <StudyCard 
+              front={currentCard.front}
+              back={
+                <>
+                  <div className="text-4xl font-jp font-medium text-gray-800 mb-3">{currentCard.front}</div>
+                  <div className="font-medium text-gray-800 text-2xl mb-2">{currentCard.back}</div>
+                  <div className="text-gray-600 mb-3">{currentCard.partOfSpeech}, {currentCard.reading}</div>
+                  {currentCard.example && (
+                    <>
+                      <div className="text-gray-600 italic">{currentCard.example}</div>
+                      <div className="text-gray-600 italic">{currentCard.exampleTranslation}</div>
+                    </>
+                  )}
+                </>
+              }
+              cardNumber={currentCardIndex + 1}
+              totalCards={dueCards.length}
+            />
 
-          <div className="mt-6 grid grid-cols-4 gap-4">
-            <Button 
-              className="flex flex-col items-center justify-center bg-red-100 text-red-800 rounded-lg py-3 px-2 hover:bg-red-200 transition" 
-              variant="ghost"
-              onClick={() => handleRating('again')}
-            >
-              <span className="text-sm font-medium">Again</span>
-              <span className="text-xs text-red-600 mt-1">{getIntervalText('again')}</span>
-            </Button>
-            <Button 
-              className="flex flex-col items-center justify-center bg-amber-100 text-amber-800 rounded-lg py-3 px-2 hover:bg-amber-200 transition" 
-              variant="ghost"
-              onClick={() => handleRating('hard')}
-            >
-              <span className="text-sm font-medium">Hard</span>
-              <span className="text-xs text-amber-600 mt-1">{getIntervalText('hard')}</span>
-            </Button>
-            <Button 
-              className="flex flex-col items-center justify-center bg-blue-100 text-blue-800 rounded-lg py-3 px-2 hover:bg-blue-200 transition" 
-              variant="ghost"
-              onClick={() => handleRating('good')}
-            >
-              <span className="text-sm font-medium">Good</span>
-              <span className="text-xs text-blue-600 mt-1">{getIntervalText('good')}</span>
-            </Button>
-            <Button 
-              className="flex flex-col items-center justify-center bg-green-100 text-green-800 rounded-lg py-3 px-2 hover:bg-green-200 transition" 
-              variant="ghost"
-              onClick={() => handleRating('easy')}
-            >
-              <span className="text-sm font-medium">Easy</span>
-              <span className="text-xs text-green-600 mt-1">{getIntervalText('easy')}</span>
-            </Button>
+            <div className="mt-6 grid grid-cols-4 gap-4">
+              <Button 
+                className="flex flex-col items-center justify-center bg-red-100 text-red-800 rounded-lg py-3 px-2 hover:bg-red-200 transition" 
+                variant="ghost"
+                onClick={() => handleRating('again')}
+              >
+                <span className="text-sm font-medium">Again</span>
+                <span className="text-xs text-red-600 mt-1">{getIntervalText('again')}</span>
+              </Button>
+              <Button 
+                className="flex flex-col items-center justify-center bg-amber-100 text-amber-800 rounded-lg py-3 px-2 hover:bg-amber-200 transition" 
+                variant="ghost"
+                onClick={() => handleRating('hard')}
+              >
+                <span className="text-sm font-medium">Hard</span>
+                <span className="text-xs text-amber-600 mt-1">{getIntervalText('hard')}</span>
+              </Button>
+              <Button 
+                className="flex flex-col items-center justify-center bg-blue-100 text-blue-800 rounded-lg py-3 px-2 hover:bg-blue-200 transition" 
+                variant="ghost"
+                onClick={() => handleRating('good')}
+              >
+                <span className="text-sm font-medium">Good</span>
+                <span className="text-xs text-blue-600 mt-1">{getIntervalText('good')}</span>
+              </Button>
+              <Button 
+                className="flex flex-col items-center justify-center bg-green-100 text-green-800 rounded-lg py-3 px-2 hover:bg-green-200 transition" 
+                variant="ghost"
+                onClick={() => handleRating('easy')}
+              >
+                <span className="text-sm font-medium">Easy</span>
+                <span className="text-xs text-green-600 mt-1">{getIntervalText('easy')}</span>
+              </Button>
+            </div>
+          </div>
+
+          <div className="md:w-1/4 bg-white rounded-lg shadow p-5 border border-gray-200 h-fit">
+            <h3 className="font-medium text-gray-800 mb-4">Study Progress</h3>
+            
+            <div className="mb-4">
+              <div className="flex justify-between text-sm text-gray-600 mb-1">
+                <span>Today's Progress</span>
+                <span>{completed.length}/{dueCards.length}</span>
+              </div>
+              <Progress value={progress} className="h-2.5" />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2 mb-6">
+              <div className="bg-gray-50 p-3 rounded">
+                <div className="text-xs text-gray-500">Due Today</div>
+                <div className="text-lg font-medium">{dueCards.length}</div>
+              </div>
+              <div className="bg-gray-50 p-3 rounded">
+                <div className="text-xs text-gray-500">Completed</div>
+                <div className="text-lg font-medium">{completed.length}</div>
+              </div>
+              <div className="bg-gray-50 p-3 rounded">
+                <div className="text-xs text-gray-500">Learned</div>
+                <div className="text-lg font-medium">--</div>
+              </div>
+              <div className="bg-gray-50 p-3 rounded">
+                <div className="text-xs text-gray-500">Retention</div>
+                <div className="text-lg font-medium">--</div>
+              </div>
+            </div>
+            
+            <h4 className="font-medium text-gray-700 text-sm mb-3">Upcoming Reviews</h4>
+            <div className="text-sm">
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-600">Tomorrow</span>
+                <span className="font-medium">--</span>
+              </div>
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-600">In 3 days</span>
+                <span className="font-medium">--</span>
+              </div>
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-600">In 7 days</span>
+                <span className="font-medium">--</span>
+              </div>
+            </div>
           </div>
         </div>
-
-        <div className="md:w-1/4 bg-white rounded-lg shadow p-5 border border-gray-200 h-fit">
-          <h3 className="font-medium text-gray-800 mb-4">Study Progress</h3>
-          
-          <div className="mb-4">
-            <div className="flex justify-between text-sm text-gray-600 mb-1">
-              <span>Today's Progress</span>
-              <span>{completed.length}/{dueCards.length}</span>
-            </div>
-            <Progress value={progress} className="h-2.5" />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-2 mb-6">
-            <div className="bg-gray-50 p-3 rounded">
-              <div className="text-xs text-gray-500">Due Today</div>
-              <div className="text-lg font-medium">{dueCards.length}</div>
-            </div>
-            <div className="bg-gray-50 p-3 rounded">
-              <div className="text-xs text-gray-500">Completed</div>
-              <div className="text-lg font-medium">{completed.length}</div>
-            </div>
-            <div className="bg-gray-50 p-3 rounded">
-              <div className="text-xs text-gray-500">Learned</div>
-              <div className="text-lg font-medium">--</div>
-            </div>
-            <div className="bg-gray-50 p-3 rounded">
-              <div className="text-xs text-gray-500">Retention</div>
-              <div className="text-lg font-medium">--</div>
-            </div>
-          </div>
-          
-          <h4 className="font-medium text-gray-700 text-sm mb-3">Upcoming Reviews</h4>
-          <div className="text-sm">
-            <div className="flex justify-between mb-2">
-              <span className="text-gray-600">Tomorrow</span>
-              <span className="font-medium">--</span>
-            </div>
-            <div className="flex justify-between mb-2">
-              <span className="text-gray-600">In 3 days</span>
-              <span className="font-medium">--</span>
-            </div>
-            <div className="flex justify-between mb-2">
-              <span className="text-gray-600">In 7 days</span>
-              <span className="font-medium">--</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 };

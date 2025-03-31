@@ -171,7 +171,7 @@ const DeckCard = ({ id, name, description, cardCount, lastStudied }: DeckCardPro
 
       {/* Add card dialog */}
       <Dialog open={addCardDialogOpen} onOpenChange={setAddCardDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
           <DialogTitle>Add Card to "{name}"</DialogTitle>
           <CardForm 
             deckId={id}
@@ -181,6 +181,9 @@ const DeckCard = ({ id, name, description, cardCount, lastStudied }: DeckCardPro
                 title: "Card added",
                 description: "Add another card or close this dialog when finished.",
               });
+              // Force refresh the card counts
+              queryClient.invalidateQueries({ queryKey: ["/api/cardCounts"] });
+              queryClient.invalidateQueries({ queryKey: [`/api/decks/${id}/cards`] });
             }}
           />
         </DialogContent>

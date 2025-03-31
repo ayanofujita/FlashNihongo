@@ -34,14 +34,17 @@ const QuizPage = () => {
             {decks && decks.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {decks.map((deck) => (
-                  <Link key={deck.id} href={`/quiz/${deck.id}`}>
-                    <a className="block bg-white rounded-lg shadow p-6 border border-gray-200 hover:shadow-md transition">
-                      <h3 className="text-lg font-bold mb-2">{deck.name}</h3>
-                      <Button className="mt-2 w-full bg-violet-600 hover:bg-violet-700">
+                  <div key={deck.id} className="block bg-white rounded-lg shadow p-6 border border-gray-200 hover:shadow-md transition">
+                    <h3 className="text-lg font-bold mb-2">{deck.name}</h3>
+                    <Button 
+                      className="mt-2 w-full bg-violet-600 hover:bg-violet-700"
+                      asChild
+                    >
+                      <Link href={`/quiz/${deck.id}`}>
                         Quiz This Deck
-                      </Button>
-                    </a>
-                  </Link>
+                      </Link>
+                    </Button>
+                  </div>
                 ))}
               </div>
             ) : (

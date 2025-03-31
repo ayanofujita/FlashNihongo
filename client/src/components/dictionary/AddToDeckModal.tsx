@@ -48,17 +48,30 @@ const AddToDeckModal = ({ isOpen, onClose, word }: AddToDeckModalProps) => {
     }
   }, [isOpen, decks]);
 
+  interface CardData {
+    deckId: number;
+    front: string;
+    back: string;
+    reading?: string;
+    partOfSpeech?: string;
+    example?: string;
+    exampleTranslation?: string;
+  }
+  
   const addCardMutation = useMutation({
-    mutationFn: async (cardData: any) => {
+    mutationFn: async (cardData: CardData) => {
       return await apiRequest("POST", "/api/cards", cardData);
     },
-    onSuccess: () => {
+    onSuccess: (_responseData, variables) => {
       toast({
         title: "Card added",
         description: "The card has been added to your deck.",
       });
       onClose();
+      // Invalidate relevant queries to update card counts
       queryClient.invalidateQueries({ queryKey: ["/api/decks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cardCounts"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/decks/${variables.deckId}/cards`] });
     },
     onError: () => {
       toast({

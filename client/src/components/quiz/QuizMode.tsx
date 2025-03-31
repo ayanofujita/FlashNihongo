@@ -44,31 +44,33 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
 
   const { data: cards, isLoading: isCardsLoading } = useQuery<Card[]>({
     queryKey: [`/api/decks/${deckId}/cards`],
-    onSuccess: (fetchedCards) => {
-      if (fetchedCards.length > 0) {
-        // Shuffle and limit to 20 cards max for the quiz
-        const shuffled = [...fetchedCards].sort(() => 0.5 - Math.random());
-        const selected = shuffled.slice(0, Math.min(20, shuffled.length));
-        setQuizCards(selected);
-        
-        // Generate options for each question (3 incorrect + 1 correct)
-        const allOptions = selected.map((card) => {
-          // Get 3 random cards different from the current one to use as distractors
-          const distractors = fetchedCards
-            .filter(c => c.id !== card.id)
-            .sort(() => 0.5 - Math.random())
-            .slice(0, 3)
-            .map(c => c.back);
-          
-          // Add the correct answer and shuffle
-          const allAnswers = [...distractors, card.back].sort(() => 0.5 - Math.random());
-          return allAnswers;
-        });
-        
-        setOptions(allOptions);
-      }
-    }
   });
+  
+  // Process cards when they load
+  useEffect(() => {
+    if (cards && cards.length > 0) {
+      // Shuffle and limit to 20 cards max for the quiz
+      const shuffled = [...cards].sort(() => 0.5 - Math.random());
+      const selected = shuffled.slice(0, Math.min(20, shuffled.length));
+      setQuizCards(selected);
+      
+      // Generate options for each question (3 incorrect + 1 correct)
+      const allOptions = selected.map((card) => {
+        // Get 3 random cards different from the current one to use as distractors
+        const distractors = cards
+          .filter((c: Card) => c.id !== card.id)
+          .sort(() => 0.5 - Math.random())
+          .slice(0, 3)
+          .map((c: Card) => c.back);
+        
+        // Add the correct answer and shuffle
+        const allAnswers = [...distractors, card.back].sort(() => 0.5 - Math.random());
+        return allAnswers;
+      });
+      
+      setOptions(allOptions);
+    }
+  }, [cards]);
 
   const handleOptionSelect = (option: string) => {
     if (isQuizFinished) return;
@@ -108,7 +110,7 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
     }
   };
 
-  if (isDeckLoading || isCardsLoading || quizCards.length === 0) {
+  if (isDeckLoading || isCardsLoading || !quizCards || quizCards.length === 0) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -141,6 +143,17 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
     );
   }
 
+  // Check if we have any cards at current index
+  if (!quizCards || !quizCards[currentQuestionIndex]) {
+    return (
+      <div className="text-center py-10">
+        <h2 className="text-xl font-bold mb-4">Quiz Error</h2>
+        <p className="text-gray-600 mb-6">There was an error loading quiz content. Please try again.</p>
+        <Button onClick={() => navigate('/decks')}>Back to Decks</Button>
+      </div>
+    );
+  }
+  
   const currentCard = quizCards[currentQuestionIndex];
   const currentOptions = options[currentQuestionIndex] || [];
   const progress = ((currentQuestionIndex + 1) / quizCards.length) * 100;
