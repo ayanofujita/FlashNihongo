@@ -43,11 +43,7 @@ const Flashcard = ({
             <div className="text-4xl font-medium text-gray-800 mb-3">{front}</div>
             <div className="text-gray-600 italic">Click to flip</div>
           </div>
-          {cardNumber && totalCards && (
-            <div className="absolute top-3 right-3 text-gray-400 text-sm">
-              Card {cardNumber}/{totalCards}
-            </div>
-          )}
+          {/* Card counter removed as requested */}
         </div>
         
         {/* Card Back */}
@@ -56,11 +52,7 @@ const Flashcard = ({
             <h3 className="text-gray-500 text-sm uppercase tracking-wide mb-3">Back</h3>
             {back}
           </div>
-          {cardNumber && totalCards && (
-            <div className="absolute top-3 right-3 text-gray-400 text-sm">
-              Card {cardNumber}/{totalCards}
-            </div>
-          )}
+          {/* Card counter removed as requested */}
         </div>
       </div>
 

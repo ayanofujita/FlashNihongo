@@ -45,6 +45,9 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
   // Store cards to study separately from the query result
   const [cardsToStudy, setCardsToStudy] = useState<Card[]>([]);
   
+  // Store a list of unique card IDs to calculate accurate metrics
+  const [uniqueCardIds, setUniqueCardIds] = useState<Set<number>>(new Set());
+  
   // Track the current card being studied (store the full card not just the index)
   const [currentCard, setCurrentCard] = useState<Card | null>(null);
   
@@ -53,6 +56,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     setCompleted([]);
     setCardsToStudy([]);
     setCurrentCard(null);
+    setUniqueCardIds(new Set());
   }, [deckId]);
 
   const { data: deck, isLoading: isDeckLoading } = useQuery<Deck>({
@@ -76,6 +80,11 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       console.log("Setting cards to study:", dueCards.length);
       console.log("Due cards:", dueCards); // Debug log to see all cards
       
+      // Update unique card IDs (for accurate due cards count)
+      const newUniqueIds = new Set(uniqueCardIds);
+      dueCards.forEach(card => newUniqueIds.add(card.id));
+      setUniqueCardIds(newUniqueIds);
+      
       // Check if we have new cards that weren't in our study session before
       const newCards = dueCards.filter(
         dueCard => !cardsToStudy.some(existingCard => existingCard.id === dueCard.id)
@@ -98,7 +107,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     } else {
       console.log("No cards to study or dueCards is empty");
     }
-  }, [dueCards, currentCard, cardsToStudy]);
+  }, [dueCards, currentCard, cardsToStudy, uniqueCardIds]);
 
   const updateProgress = useMutation({
     mutationFn: async ({ 
@@ -165,7 +174,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     if (!currentCard) return;
     
     // Bail early if we've already completed all cards
-    if (completed.length >= cardsToStudy.length) {
+    if (completed.length >= uniqueCardIds.size) {
       toast({
         title: "Study Complete",
         description: "All cards have been reviewed. Return to deck list.",
@@ -283,10 +292,10 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
   }
 
   // Check if we've completed all cards or there's no current card (means we've gone through all cards)
-  const allCardsCompleted = (completed.length > 0 && completed.length >= cardsToStudy.length) || (!currentCard && cardsToStudy.length > 0 && completed.length > 0);
+  const allCardsCompleted = (completed.length > 0 && completed.length >= uniqueCardIds.size) || (!currentCard && uniqueCardIds.size > 0 && completed.length > 0);
   
   // Calculate progress
-  const progress = (completed.length / cardsToStudy.length) * 100;
+  const progress = uniqueCardIds.size > 0 ? (completed.length / uniqueCardIds.size) * 100 : 0;
   
   // Calculate card position
   const currentCardNumber = currentCard 
@@ -314,7 +323,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
         // Show completion screen
         <div className="bg-white rounded-lg shadow p-8 border border-gray-200 text-center">
           <h3 className="text-xl font-bold mb-4">Study Session Complete!</h3>
-          <p className="text-gray-600 mb-6">You've reviewed all {cardsToStudy.length} cards due for today.</p>
+          <p className="text-gray-600 mb-6">You've reviewed all {uniqueCardIds.size} cards due for today.</p>
           <Button onClick={() => navigate('/decks')} className="bg-blue-600 hover:bg-blue-700">
             Return to Decks
           </Button>
@@ -390,7 +399,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
             <div className="mb-4">
               <div className="flex justify-between text-sm text-gray-600 mb-1">
                 <span>Today's Progress</span>
-                <span>{completed.length}/{cardsToStudy.length}</span>
+                <span>{completed.length}/{uniqueCardIds.size}</span>
               </div>
               <Progress value={progress} className="h-2.5" />
             </div>
@@ -398,7 +407,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
             <div className="grid grid-cols-2 gap-2 mb-6">
               <div className="bg-gray-50 p-3 rounded">
                 <div className="text-xs text-gray-500">Due Today</div>
-                <div className="text-lg font-medium">{cardsToStudy.length}</div>
+                <div className="text-lg font-medium">{uniqueCardIds.size}</div>
               </div>
               <div className="bg-gray-50 p-3 rounded">
                 <div className="text-xs text-gray-500">Completed</div>
@@ -406,7 +415,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
               </div>
               <div className="bg-gray-50 p-3 rounded">
                 <div className="text-xs text-gray-500">Remaining</div>
-                <div className="text-lg font-medium">{cardsToStudy.length - completed.length}</div>
+                <div className="text-lg font-medium">{uniqueCardIds.size - completed.length}</div>
               </div>
               <div className="bg-gray-50 p-3 rounded">
                 <div className="text-xs text-gray-500">Retention</div>
