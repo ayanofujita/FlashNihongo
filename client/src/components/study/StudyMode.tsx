@@ -164,26 +164,53 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       // Update the progress in the backend
       await updateProgress.mutateAsync({ cardId: currentCard.id, rating });
       
-      // Add to completed list
-      setCompleted(prev => [...prev, currentCard.id]);
-      
-      // Find the next card to study (one that's not in completed)
-      const remainingCards = cardsToStudy.filter(card => 
-        !completed.includes(card.id) && card.id !== currentCard.id
-      );
-      
-      if (remainingCards.length > 0) {
-        // Move to the next card
-        setCurrentCard(remainingCards[0]);
-      } else {
-        // All cards completed
-        setCurrentCard(null);
+      // Special handling for "again" rating - don't mark as completed, 
+      // but put at the end of remaining cards to show again
+      if (rating === 'again') {
+        // We'll keep a copy of the current card to add at the end of remaining cards
+        const cardToReview = {...currentCard};
         
-        // Display a completion toast
-        toast({
-          title: "Study Complete",
-          description: "All cards have been reviewed. Great job!",
-        });
+        // Find the next card to study (one that's not in completed)
+        const remainingCards = cardsToStudy.filter(card => 
+          !completed.includes(card.id) && card.id !== currentCard.id
+        );
+        
+        if (remainingCards.length > 0) {
+          // Move to the next card
+          setCurrentCard(remainingCards[0]);
+          
+          // After a delay, add the "again" card back to cardsToStudy at the end
+          // This ensures the user doesn't see the same card twice in a row
+          setTimeout(() => {
+            console.log("Adding card back to study queue:", cardToReview);
+            setCardsToStudy(prev => [...prev, cardToReview]);
+          }, 500);
+        } else {
+          // Show the card again immediately if it was the only one
+          setCurrentCard(cardToReview);
+        }
+      } else {
+        // For other ratings, mark as completed
+        setCompleted(prev => [...prev, currentCard.id]);
+        
+        // Find the next card to study (one that's not in completed)
+        const remainingCards = cardsToStudy.filter(card => 
+          !completed.includes(card.id) && card.id !== currentCard.id
+        );
+        
+        if (remainingCards.length > 0) {
+          // Move to the next card
+          setCurrentCard(remainingCards[0]);
+        } else {
+          // All cards completed
+          setCurrentCard(null);
+          
+          // Display a completion toast
+          toast({
+            title: "Study Complete",
+            description: "All cards have been reviewed. Great job!",
+          });
+        }
       }
     } catch (error) {
       console.error("Failed to update study progress:", error);
@@ -299,7 +326,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
                     )}
                   </>
                 }
-                cardNumber={cardsToStudy.filter(card => !completed.includes(card.id)).length}
+                cardNumber={1}
                 totalCards={cardsToStudy.filter(card => !completed.includes(card.id)).length}
               />
             )}
