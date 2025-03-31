@@ -47,28 +47,42 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
   
   // Track the current card being studied (store the full card not just the index)
   const [currentCard, setCurrentCard] = useState<Card | null>(null);
+  
+  // Reset state when deck ID changes
+  useEffect(() => {
+    setCompleted([]);
+    setCardsToStudy([]);
+    setCurrentCard(null);
+  }, [deckId]);
 
   const { data: deck, isLoading: isDeckLoading } = useQuery<Deck>({
     queryKey: [`/api/decks/${deckId}`],
   });
 
   const { data: dueCards, isLoading: isCardsLoading } = useQuery<Card[]>({
-    queryKey: [`/api/study/due`],
+    queryKey: [`/api/study/due`, deckId],
     queryFn: async () => {
       const response = await fetch(`/api/study/due?userId=1&deckIds=${deckId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch due cards');
       }
       return response.json();
-    },
-    onSuccess: (data) => {
-      if (data && data.length > 0 && cardsToStudy.length === 0) {
-        // Set the cards to study only once when data is loaded
-        setCardsToStudy(data);
-        setCurrentCard(data[0]);
-      }
     }
   });
+  
+  // Set up cards to study whenever dueCards changes
+  useEffect(() => {
+    if (dueCards && dueCards.length > 0) {
+      console.log("Setting cards to study:", dueCards.length);
+      setCardsToStudy(dueCards);
+      
+      // Only set the current card if we don't already have one
+      // This prevents the current card from changing during API refresh
+      if (!currentCard) {
+        setCurrentCard(dueCards[0]);
+      }
+    }
+  }, [dueCards, currentCard]);
 
   const updateProgress = useMutation({
     mutationFn: async ({ 
@@ -119,7 +133,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     },
     onSuccess: () => {
       // Invalidate queries that might be affected by this update
-      queryClient.invalidateQueries({ queryKey: [`/api/study/due`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/study/due`, deckId] });
     },
     onError: () => {
       toast({
