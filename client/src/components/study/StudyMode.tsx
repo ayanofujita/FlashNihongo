@@ -75,17 +75,30 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     if (dueCards && dueCards.length > 0) {
       console.log("Setting cards to study:", dueCards.length);
       console.log("Due cards:", dueCards); // Debug log to see all cards
-      setCardsToStudy(dueCards);
+      
+      // Check if we have new cards that weren't in our study session before
+      const newCards = dueCards.filter(
+        dueCard => !cardsToStudy.some(existingCard => existingCard.id === dueCard.id)
+      );
+      
+      if (newCards.length > 0) {
+        console.log("New cards added to study session:", newCards.length);
+        // Add the new cards to our study deck
+        setCardsToStudy(currentCards => [...currentCards, ...newCards]);
+      } else if (cardsToStudy.length === 0) {
+        // First load or reset
+        setCardsToStudy(dueCards);
+      }
       
       // Only set the current card if we don't already have one
       // This prevents the current card from changing during API refresh
-      if (!currentCard) {
+      if (!currentCard && dueCards.length > 0) {
         setCurrentCard(dueCards[0]);
       }
     } else {
       console.log("No cards to study or dueCards is empty");
     }
-  }, [dueCards, currentCard]);
+  }, [dueCards, currentCard, cardsToStudy]);
 
   const updateProgress = useMutation({
     mutationFn: async ({ 

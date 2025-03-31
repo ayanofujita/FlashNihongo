@@ -165,10 +165,12 @@ export class MemStorage implements IStorage {
     const id = this.deckIdCounter++;
     const now = new Date();
     const newDeck: Deck = { 
-      ...deck, 
-      id, 
-      createdAt: now, 
-      lastStudied: null 
+      id,
+      name: deck.name,
+      description: deck.description ?? null,
+      userId: deck.userId ?? null,
+      createdAt: now,
+      lastStudied: null
     };
     this.decks.set(id, newDeck);
     return newDeck;
@@ -219,7 +221,17 @@ export class MemStorage implements IStorage {
   async createCard(card: InsertCard): Promise<Card> {
     const id = this.cardIdCounter++;
     const now = new Date();
-    const newCard: Card = { ...card, id, createdAt: now };
+    const newCard: Card = { 
+      id, 
+      deckId: card.deckId,
+      front: card.front,
+      back: card.back,
+      reading: card.reading ?? null,
+      example: card.example ?? null,
+      exampleTranslation: card.exampleTranslation ?? null,
+      partOfSpeech: card.partOfSpeech ?? null,
+      createdAt: now
+    };
     this.cards.set(id, newCard);
     return newCard;
   }
@@ -235,11 +247,19 @@ export class MemStorage implements IStorage {
 
   async deleteCard(id: number): Promise<boolean> {
     // Delete any study progress for this card
-    for (const [key, progress] of this.studyProgresses.entries()) {
+    // Find and delete all keys associated with this card
+    const keysToDelete: string[] = [];
+    
+    this.studyProgresses.forEach((progress, key) => {
       if (progress.cardId === id) {
-        this.studyProgresses.delete(key);
+        keysToDelete.push(key);
       }
-    }
+    });
+    
+    // Now delete all keys we found
+    keysToDelete.forEach(key => {
+      this.studyProgresses.delete(key);
+    });
     
     return this.cards.delete(id);
   }
@@ -262,12 +282,25 @@ export class MemStorage implements IStorage {
     for (const card of deckCards) {
       const key = `${userId}-${card.id}`;
       const progress = this.studyProgresses.get(key);
+      const cardCreatedAt = card.createdAt ? new Date(card.createdAt) : null;
+      const createdRecently = cardCreatedAt && 
+        ((now.getTime() - cardCreatedAt.getTime()) < 24 * 60 * 60 * 1000); // Created less than 24 hours ago
       
-      // If no progress record exists or the next review date is <= now, the card is due
-      if (!progress || !progress.nextReview || progress.nextReview <= now) {
+      // Cards are due if:
+      // 1. No progress record exists, or
+      // 2. Next review date is <= now, or
+      // 3. Card was created recently (within last 24 hours)
+      if (!progress || !progress.nextReview || progress.nextReview <= now || createdRecently) {
         dueCards.push(card);
       }
     }
+    
+    // Sort cards so that newly created cards appear first, followed by cards due for review
+    dueCards.sort((a, b) => {
+      const aCreatedAt = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bCreatedAt = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bCreatedAt - aCreatedAt; // Newer cards first
+    });
     
     return dueCards;
   }
