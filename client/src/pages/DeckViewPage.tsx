@@ -171,19 +171,7 @@ const DeckViewPage = () => {
                   </div>
                 )}
                 
-                {(card.example || card.exampleTranslation) && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="mt-2 text-sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCardClick(card);
-                    }}
-                  >
-                    View Details
-                  </Button>
-                )}
+                
               </div>
             );
 
@@ -198,11 +186,27 @@ const DeckViewPage = () => {
                   className="transition-shadow hover:shadow-md"
                 />
 
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+                <div className="flex space-x-1 mt-4 justify-end">
                   <Button
                     variant="outline"
-                    size="icon"
-                    className="h-8 w-8 rounded-full bg-white"
+                    size="sm"
+                    className="bg-white"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCardClick(card);
+                    }}
+                  >
+                    <span className="sr-only">Show More</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-gray-600">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="8" x2="12" y2="16"></line>
+                      <line x1="8" y1="12" x2="16" y2="12"></line>
+                    </svg>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-white"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleEditClick(card);
@@ -216,8 +220,8 @@ const DeckViewPage = () => {
                   </Button>
                   <Button
                     variant="outline"
-                    size="icon"
-                    className="h-8 w-8 rounded-full bg-white"
+                    size="sm"
+                    className="bg-white"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDeleteClick(card.id);
