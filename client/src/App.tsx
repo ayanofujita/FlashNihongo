@@ -20,7 +20,7 @@ function Router() {
       <Navigation />
       <main className="flex-grow container mx-auto px-4 py-8">
         <Switch>
-          <Route path="/" component={DecksPage} />
+          <Route path="/" component={HomePage} />
           <Route path="/decks" component={DecksPage} />
           <Route path="/decks/:deckId/cards" component={DeckViewPage} />
           <Route path="/study/:deckId?" component={StudyPage} />
