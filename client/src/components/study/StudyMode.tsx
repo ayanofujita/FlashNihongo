@@ -136,7 +136,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     },
     onSuccess: () => {
       // Invalidate user stats queries
-      queryClient.invalidateQueries({ queryKey: ['/api/user-stats'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/user-stats/${1}`] });
     },
     onError: (error) => {
       console.error("Failed to update streak:", error);
@@ -151,7 +151,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     },
     onSuccess: () => {
       // Invalidate user stats queries
-      queryClient.invalidateQueries({ queryKey: ['/api/user-stats'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/user-stats/${1}`] });
     },
     onError: (error) => {
       console.error("Failed to increment review stats:", error);

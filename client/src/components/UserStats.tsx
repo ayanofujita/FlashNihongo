@@ -21,7 +21,7 @@ interface UserStats {
 
 export const UserStats = ({ userId = 1 }: UserStatsProps) => {
   const { data: stats, isLoading, error } = useQuery<UserStats>({
-    queryKey: ['/api/user-stats', userId],
+    queryKey: [`/api/user-stats/${userId}`],
     enabled: !!userId,
   });
 
