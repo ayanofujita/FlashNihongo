@@ -2,13 +2,21 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { searchWord } from "./jisho-api";
-import { insertDeckSchema, insertCardSchema, insertUserStatsSchema, insertUserSchema, type User } from "@shared/schema";
+import { insertDeckSchema, insertCardSchema, insertUserStatsSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 
 // Extend Express to work with Passport.js
 declare global {
   namespace Express {
-    interface User extends Partial<User> {} 
+    // Define User interface for Passport without circular reference
+    interface User {
+      id: number;
+      username: string;
+      email?: string;
+      displayName?: string;
+      profilePicture?: string;
+      googleId?: string;
+    }
   }
 }
 

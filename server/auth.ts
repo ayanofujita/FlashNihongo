@@ -11,7 +11,9 @@ export function setupAuth(app: Express) {
   passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID || '',
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-    callbackURL: '/auth/google/callback',
+    callbackURL: process.env.REPLIT_DOMAINS 
+      ? `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}/auth/google/callback`
+      : 'http://localhost:5000/auth/google/callback',
     scope: ['profile', 'email']
   }, 
   async (accessToken, refreshToken, profile, done) => {
@@ -61,7 +63,15 @@ export function setupAuth(app: Express) {
         }
       }
       
-      return done(null, user);
+      // Handle nullable fields on the user by converting to Express.User interface
+      return done(null, user ? {
+        id: user.id,
+        username: user.username,
+        email: user.email || undefined,
+        displayName: user.displayName || undefined,
+        profilePicture: user.profilePicture || undefined,
+        googleId: user.googleId || undefined
+      } : undefined);
     } catch (error) {
       return done(error as Error);
     }
@@ -76,7 +86,19 @@ export function setupAuth(app: Express) {
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
-      done(null, user);
+      if (user) {
+        // Map the DB user to the Express.User interface to fix the type issue
+        done(null, {
+          id: user.id,
+          username: user.username,
+          email: user.email || undefined,
+          displayName: user.displayName || undefined,
+          profilePicture: user.profilePicture || undefined,
+          googleId: user.googleId || undefined
+        });
+      } else {
+        done(null, null);
+      }
     } catch (error) {
       done(error);
     }
