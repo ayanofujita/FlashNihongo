@@ -2,18 +2,12 @@
 <svg width="512px" height="512px" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#4f46e5;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+      <stop offset="0%" style="stop-color:#e50000;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ff0000;stop-opacity:1" />
     </linearGradient>
   </defs>
-  <rect x="42" y="42" width="428" height="428" rx="54" ry="54" fill="url(#gradient)" />
+  <circle cx="256" cy="256" r="240" fill="url(#gradient)" />
   
-  <!-- Kanji character for "study" (学) -->
-  <path d="M256 133 Q256 120, 348 120 Q348 120, 348 147 Q348 147, 256 133 Z" fill="white" />
-  <path d="M164 120 Q164 120, 256 133 Q256 147, 164 147 Q164 147, 164 120 Z" fill="white" />
-  <path d="M256 133 L256 200 L336 194 L336 208 L256 214 L256 320 Q256 320, 310 307 Q310 307, 310 321 Q310 321, 256 334 L256 374 L336 360 L336 374 L256 388 L256 428 L240 428 L240 390 L170 400 L170 386 L240 376 L240 336 Q240 336, 186 348 Q186 348, 186 334 Q186 334, 240 320 L240 218 L170 226 L170 212 L240 204 L240 128 Z" fill="white" />
-  
-  <!-- Flashcard representation -->
-  <rect x="122" y="240" width="268" height="186" rx="13" ry="13" fill="white" opacity="0.2" />
-  <rect x="136" y="254" width="240" height="160" rx="8" ry="8" fill="white" opacity="0.3" />
+  <!-- Thunder bolt icon -->
+  <path d="M256 100 L160 280 L240 280 L200 420 L320 220 L240 220 L280 100 Z" fill="white" />
 </svg>

@@ -279,7 +279,7 @@ export class DatabaseStorage implements IStorage {
           cardId,
           userId,
           ease: update.ease || 250,
-          interval: update.interval || 0,
+          interval: update.interval ? update.interval.toString() : "0",
           reviews: update.reviews || 1,
           lapses: update.lapses || 0,
           lastReviewed: now,
@@ -288,10 +288,12 @@ export class DatabaseStorage implements IStorage {
         
         console.log(`Creating new progress with data:`, JSON.stringify(insertData));
   
-        const [newProgress] = await db
+        const newProgressResult = await db
           .insert(studyProgress)
-          .values(insertData)
+          .values([insertData])
           .returning();
+          
+        const newProgress = newProgressResult[0];
         
         console.log(
           `New progress created for card ${cardId}, next review: ${newProgress.nextReview?.toISOString()}`
