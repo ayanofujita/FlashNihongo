@@ -12,9 +12,9 @@ const Sidebar = () => {
   };
   
   return (
-    <div className="bg-white shadow w-64 flex-shrink-0 min-h-screen flex flex-col">
+    <div className="bg-white shadow w-64 flex-shrink-0 h-screen flex flex-col">
       {/* Logo/Header Section */}
-      <div className="p-4 border-b">
+      <div className="p-4 border-b flex-shrink-0">
         <Link href="/">
           <div className="flex items-center cursor-pointer hover:opacity-80 transition-opacity">
             <h1 className="text-2xl font-bold text-blue-600">Flash日本語</h1>
@@ -23,7 +23,7 @@ const Sidebar = () => {
       </div>
       
       {/* User Profile Section */}
-      <div className="p-4 border-b">
+      <div className="p-4 border-b flex-shrink-0">
         <div className="flex items-center space-x-3">
           <Avatar className="w-10 h-10">
             <AvatarImage src="https://github.com/shadcn.png" />

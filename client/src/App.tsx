@@ -14,9 +14,9 @@ import DeckViewPage from "@/pages/DeckViewPage";
 
 function Router() {
   return (
-    <div className="min-h-screen flex">
+    <div className="h-screen flex overflow-hidden">
       <Sidebar />
-      <div className="flex flex-col flex-grow">
+      <div className="flex flex-col flex-grow overflow-y-auto">
         <main className="flex-grow w-full px-6 py-8">
           <Switch>
             <Route path="/" component={HomePage} />
