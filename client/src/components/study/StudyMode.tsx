@@ -277,19 +277,30 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
   };
 
   const getIntervalText = (rating: 'again' | 'hard' | 'good' | 'easy') => {
-    const hours = (interval: number) => Math.round(interval * 24);
-    const days = (interval: number) => Math.round(interval);
+    const formatInterval = (interval: number) => {
+      // Convert to hours
+      const hours = Math.round(interval * 24);
+      
+      // If less than 24 hours, show in hours
+      if (hours < 24) {
+        return `${hours}h`;
+      }
+      
+      // Otherwise show in days
+      const days = Math.round(interval);
+      return `${days}d`;
+    };
     
     // For the first review, we can show static values
     switch (rating) {
       case 'again':
-        return `${hours(AGAIN_INTERVAL)}h`;
+        return formatInterval(AGAIN_INTERVAL);
       case 'hard':
-        return `${days(HARD_INTERVAL_FACTOR)}d`;
+        return formatInterval(HARD_INTERVAL_FACTOR);
       case 'good':
-        return `${days(INITIAL_INTERVAL)}d`;
+        return formatInterval(INITIAL_INTERVAL);
       case 'easy':
-        return `${days(INITIAL_INTERVAL * EASY_BONUS)}d`;
+        return formatInterval(INITIAL_INTERVAL * EASY_BONUS);
     }
   };
 

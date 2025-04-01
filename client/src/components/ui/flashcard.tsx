@@ -9,6 +9,7 @@ interface FlashcardProps {
   autoFlip?: boolean;
   cardNumber?: number;
   totalCards?: number;
+  resetToFront?: boolean;
 }
 
 const Flashcard = ({ 
@@ -18,7 +19,8 @@ const Flashcard = ({
   onClick, 
   autoFlip = false,
   cardNumber,
-  totalCards
+  totalCards,
+  resetToFront = false
 }: FlashcardProps) => {
   const [flipped, setFlipped] = useState(autoFlip);
   const [cardHeight, setCardHeight] = useState<number>(320); // min-h-80 = 320px
@@ -43,6 +45,13 @@ const Flashcard = ({
     
     return () => clearTimeout(timer);
   }, [front, back]);
+
+  // Reset to front side when a card changes
+  useEffect(() => {
+    if (resetToFront) {
+      setFlipped(false);
+    }
+  }, [front, resetToFront]);
 
   const handleClick = () => {
     setFlipped(!flipped);
