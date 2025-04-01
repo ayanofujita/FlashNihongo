@@ -313,29 +313,101 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
         </DialogContent>
       </Dialog>
 
-      <Progress value={progress} className="w-full h-2.5 mb-6" />
-      <div className="flex justify-between text-sm text-gray-600 mb-6">
-        <span>Question {currentQuestionIndex + 1} of {quizCards.length}</span>
-        <span>Score: {score}/{isQuizFinished ? quizCards.length : currentQuestionIndex}</span>
-      </div>
+      {!isQuizFinished && (
+        <>
+          <Progress value={progress} className="w-full h-2.5 mb-6" />
+          <div className="flex justify-between text-sm text-gray-600 mb-6">
+            <span>Question {currentQuestionIndex + 1} of {quizCards.length}</span>
+            <span>Score: {score}/{currentQuestionIndex}</span>
+          </div>
 
-      <QuizCard
-        question={currentCard.front}
-        options={currentOptions}
-        onSelect={handleOptionSelect}
-        selectedOption={selectedOption}
-        correctAnswer={quizType === "meaning" ? currentCard.back : currentCard.reading}
-        quizType={quizType}
-      />
+          <QuizCard
+            question={currentCard.front}
+            options={currentOptions}
+            onSelect={handleOptionSelect}
+            selectedOption={selectedOption}
+            correctAnswer={quizType === "meaning" ? currentCard.back : currentCard.reading}
+            quizType={quizType}
+          />
+        </>
+      )}
 
       {/* Navigation buttons removed - quiz now automatically advances */}
 
       {isQuizFinished && (
         <div className="mt-8 p-6 bg-white rounded-lg shadow border border-gray-200">
-          <h3 className="text-xl font-bold mb-4">Quiz Results</h3>
-          <p className="text-2xl font-bold text-center mb-6">
+          <h3 className="text-xl font-bold mb-2">Quiz Results</h3>
+          <p className="text-3xl font-bold text-center mb-6">
             {score}/{quizCards.length} ({Math.round((score / quizCards.length) * 100)}%)
           </p>
+          
+          <div className="mb-8">
+            <h4 className="text-lg font-medium mb-3 pb-2 border-b">Performance Summary</h4>
+            <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+              {quizCards.map((card, index) => {
+                const userAnswer = answers[index] || "";
+                const correctAnswer = quizType === "meaning" ? card.back : card.reading;
+                const isCorrect = userAnswer === correctAnswer;
+                
+                return (
+                  <div 
+                    key={index}
+                    className={`p-4 rounded-lg ${
+                      isCorrect ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-lg font-jp font-medium">{card.front}</span>
+                      <span className={`text-sm px-2 py-1 rounded-full ${
+                        isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {isCorrect ? 'Correct' : 'Incorrect'}
+                      </span>
+                    </div>
+                    
+                    {quizType === "meaning" ? (
+                      <>
+                        <div className="text-gray-600 mb-1">
+                          <span className="font-medium">Correct meaning:</span> {card.back}
+                        </div>
+                        {!isCorrect && (
+                          <div className="text-red-600">
+                            <span className="font-medium">Your answer:</span> {userAnswer}
+                          </div>
+                        )}
+                        {card.reading && (
+                          <div className="text-gray-500 text-sm mt-1">
+                            <span className="font-medium">Reading:</span> {card.reading}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-gray-600 mb-1">
+                          <span className="font-medium">Correct reading:</span> {card.reading}
+                        </div>
+                        {!isCorrect && (
+                          <div className="text-red-600">
+                            <span className="font-medium">Your answer:</span> {userAnswer}
+                          </div>
+                        )}
+                        <div className="text-gray-500 text-sm mt-1">
+                          <span className="font-medium">Meaning:</span> {card.back}
+                        </div>
+                      </>
+                    )}
+                    
+                    {card.partOfSpeech && (
+                      <div className="text-gray-500 text-xs mt-2">
+                        {card.partOfSpeech}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          
           <div className="flex justify-center gap-4">
             <Button variant="outline" onClick={() => {
               // Reset the quiz to start over
