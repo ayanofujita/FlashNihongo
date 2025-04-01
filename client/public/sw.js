@@ -1,6 +1,6 @@
 // Service Worker for FlashNihongo PWA
 
-const CACHE_NAME = 'flashnihongo-cache-v1';
+const CACHE_NAME = 'flashnihongo-cache-v2'; // Updated cache version
 const urlsToCache = [
   '/',
   '/index.html',
@@ -8,6 +8,8 @@ const urlsToCache = [
   '/src/index.css',
   '/icon-192x192.png',
   '/icon-512x512.png',
+  '/icon-192x192.svg',
+  '/icon-512x512.svg',
   '/manifest.json'
 ];
 
