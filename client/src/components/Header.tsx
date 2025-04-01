@@ -18,9 +18,9 @@ const Header = () => {
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center">
           <Link href="/">
-            <a className="flex items-center">
+            <div className="flex items-center cursor-pointer hover:opacity-80 transition-opacity">
               <h1 className="text-2xl font-bold text-blue-600">Flash日本語</h1>
-            </a>
+            </div>
           </Link>
         </div>
 
