@@ -34,6 +34,7 @@ const EASY_BONUS = 1.3;
 const INTERVAL_MODIFIER = 1;
 const HARD_INTERVAL_FACTOR = 0.5;
 const AGAIN_INTERVAL = 0.1; // ~0.1 days = ~2.4 hours
+const EASE_MODIFIER = 0.15; // How much to adjust ease on each review
 
 const StudyMode = ({ deckId }: StudyModeProps) => {
   const [, navigate] = useLocation();
@@ -151,29 +152,49 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
           existingProgress = await response.json();
           reviews = (existingProgress?.reviews || 0) + 1;
           lapses = existingProgress?.lapses || 0;
+          
+          // Use the existing ease if available
+          ease = existingProgress?.ease || ease;
         }
       } catch (error) {
         console.error("Failed to fetch existing progress:", error);
       }
       
+      // Base interval calculation on existing progress if available
+      let baseInterval = existingProgress?.interval || INITIAL_INTERVAL;
+      
+      // Adjust ease based on response
       switch (rating) {
         case 'again':
+          // For "again" responses, shorten the interval significantly
           interval = AGAIN_INTERVAL;
-          ease = 200; // Lower ease for "again" responses
+          ease = Math.max(130, ease - 20); // Minimum ease 130, decrease by 20
           lapses += 1; // Increment lapses for "again" responses
           break;
         case 'hard':
-          interval = HARD_INTERVAL_FACTOR * INITIAL_INTERVAL;
-          ease = 220;
+          // For "hard" responses, use a shorter interval and decrease ease
+          interval = HARD_INTERVAL_FACTOR * baseInterval;
+          ease = Math.max(130, ease - 15); // Decrease ease by 15
           break;
         case 'good':
-          interval = INITIAL_INTERVAL * INTERVAL_MODIFIER;
-          ease = 250;
+          // For "good" responses, use the current interval and keep ease stable
+          interval = baseInterval;
+          // No change to ease
           break;
         case 'easy':
-          interval = INITIAL_INTERVAL * EASY_BONUS * INTERVAL_MODIFIER;
-          ease = 280; // Higher ease for "easy" responses
+          // For "easy" responses, use a longer interval and increase ease
+          interval = baseInterval * EASY_BONUS;
+          ease = Math.min(370, ease + 15); // Increase ease by 15, maximum 370
           break;
+      }
+      
+      // For reviews after the first one, calculate interval based on ease
+      if (reviews > 1 && rating !== 'again') {
+        // Convert ease (percentage) to a multiplier
+        const easeMultiplier = ease / 100;
+        
+        // For subsequent reviews, use the formula: interval = interval * ease
+        interval = interval * easeMultiplier * INTERVAL_MODIFIER;
       }
       
       // Calculate next review date based on the interval in days
@@ -181,7 +202,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       const now = new Date();
       const nextReview = new Date(now.getTime() + interval * 24 * 60 * 60 * 1000);
       
-      console.log(`Card ${cardId} next review: ${nextReview.toISOString()}, interval: ${interval} days`);
+      console.log(`Card ${cardId} next review: ${nextReview.toISOString()}, interval: ${interval} days, ease: ${ease}`);
       
       await apiRequest("POST", "/api/study/progress", {
         cardId,
@@ -223,60 +244,27 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       // Update the progress in the backend
       await updateProgress.mutateAsync({ cardId: currentCard.id, rating });
       
-      // Special handling for "again" rating - don't mark as completed, 
-      // but put at the end of remaining cards to show again
-      if (rating === 'again') {
-        // We'll keep a copy of the current card to add at the end of remaining cards
-        const cardToReview = {...currentCard};
-        
-        // Find the next card to study (one that's not in completed)
-        const remainingCards = cardsToStudy.filter(card => 
-          !completed.includes(card.id) && card.id !== currentCard.id
-        );
-        
-        if (remainingCards.length > 0) {
-          // Move to the next card
-          setCurrentCard(remainingCards[0]);
-          
-          // After a delay, requeue this card at the END of the deck
-          // This ensures the user doesn't see the same card twice in a row
-          setTimeout(() => {
-            console.log("Adding card back to study queue:", cardToReview);
-            // Remove any existing instances of this card from the queue (by ID)
-            setCardsToStudy(prev => {
-              const filteredCards = prev.filter(c => c.id !== cardToReview.id);
-              // Now add it back at the end
-              return [...filteredCards, cardToReview];
-            });
-          }, 500);
-        } else {
-          // Show the card again immediately if it was the only one
-          // But first, update the cardsToStudy to only have one instance of this card
-          setCardsToStudy([cardToReview]);
-          setCurrentCard(cardToReview);
-        }
+      // Mark the card as completed regardless of rating
+      // We'll respect the calculated interval for all ratings
+      setCompleted(prev => [...prev, currentCard.id]);
+      
+      // Find the next card to study (one that's not in completed)
+      const remainingCards = cardsToStudy.filter(card => 
+        !completed.includes(card.id) && card.id !== currentCard.id
+      );
+      
+      if (remainingCards.length > 0) {
+        // Move to the next card
+        setCurrentCard(remainingCards[0]);
       } else {
-        // For other ratings, mark as completed
-        setCompleted(prev => [...prev, currentCard.id]);
+        // All cards completed
+        setCurrentCard(null);
         
-        // Find the next card to study (one that's not in completed)
-        const remainingCards = cardsToStudy.filter(card => 
-          !completed.includes(card.id) && card.id !== currentCard.id
-        );
-        
-        if (remainingCards.length > 0) {
-          // Move to the next card
-          setCurrentCard(remainingCards[0]);
-        } else {
-          // All cards completed
-          setCurrentCard(null);
-          
-          // Display a completion toast
-          toast({
-            title: "Study Complete",
-            description: "All cards have been reviewed. Great job!",
-          });
-        }
+        // Display a completion toast
+        toast({
+          title: "Study Complete",
+          description: "All cards have been reviewed. Great job!",
+        });
       }
     } catch (error) {
       console.error("Failed to update study progress:", error);
@@ -289,17 +277,19 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
   };
 
   const getIntervalText = (rating: 'again' | 'hard' | 'good' | 'easy') => {
-    const hours = (interval: number) => interval * 24;
+    const hours = (interval: number) => Math.round(interval * 24);
+    const days = (interval: number) => Math.round(interval);
     
+    // For the first review, we can show static values
     switch (rating) {
       case 'again':
-        return `${Math.round(hours(AGAIN_INTERVAL))}h`;
+        return `${hours(AGAIN_INTERVAL)}h`;
       case 'hard':
-        return `${Math.round(INITIAL_INTERVAL * HARD_INTERVAL_FACTOR)}d`;
+        return `${days(HARD_INTERVAL_FACTOR)}d`;
       case 'good':
-        return `${Math.round(INITIAL_INTERVAL * INTERVAL_MODIFIER)}d`;
+        return `${days(INITIAL_INTERVAL)}d`;
       case 'easy':
-        return `${Math.round(INITIAL_INTERVAL * EASY_BONUS * INTERVAL_MODIFIER)}d`;
+        return `${days(INITIAL_INTERVAL * EASY_BONUS)}d`;
     }
   };
 
