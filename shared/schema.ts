@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -67,7 +67,7 @@ export const studyProgress = pgTable("study_progress", {
   cardId: integer("card_id").references(() => cards.id).notNull(),
   userId: integer("user_id").references(() => users.id).notNull(),
   ease: integer("ease").default(250),
-  interval: integer("interval").default(0),
+  interval: numeric("interval", { precision: 5, scale: 2 }).default("0"),
   reviews: integer("reviews").default(0),
   lapses: integer("lapses").default(0),
   lastReviewed: timestamp("last_reviewed"),
