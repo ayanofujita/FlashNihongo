@@ -1,9 +1,11 @@
 import { useLocation, Link } from "wouter";
-import { Home, Book, GraduationCap, HelpCircle, Search, User } from "lucide-react";
+import { Home, Book, GraduationCap, HelpCircle, Search, User, LogIn } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useUser } from "@/components/auth/UserContext";
 
 const MobileNavBar = () => {
   const [location] = useLocation();
+  const { user } = useUser();
   
   const isActive = (path: string) => {
     if (path === "/") return location === "/";
@@ -59,17 +61,27 @@ const MobileNavBar = () => {
           </a>
         </Link>
         
-        <Link href="/profile">
-          <a className={`p-3 flex flex-col items-center justify-center ${
-            isActive("/profile") ? "text-blue-600" : "text-gray-500"
-          }`}>
-            <Avatar className="h-6 w-6">
-              <AvatarImage src="https://github.com/shadcn.png" />
-              <AvatarFallback>U</AvatarFallback>
-            </Avatar>
-            <span className="text-xs mt-1">Profile</span>
+        {user ? (
+          <Link href="/profile">
+            <a className={`p-3 flex flex-col items-center justify-center ${
+              isActive("/profile") ? "text-blue-600" : "text-gray-500"
+            }`}>
+              <Avatar className="h-6 w-6">
+                <AvatarImage src={user.profilePicture || undefined} />
+                <AvatarFallback>{user.displayName?.[0] || user.username[0]}</AvatarFallback>
+              </Avatar>
+              <span className="text-xs mt-1">Profile</span>
+            </a>
+          </Link>
+        ) : (
+          <a 
+            href="/auth/google"
+            className={`p-3 flex flex-col items-center justify-center text-gray-500`}
+          >
+            <LogIn className="h-5 w-5" />
+            <span className="text-xs mt-1">Sign In</span>
           </a>
-        </Link>
+        )}
       </div>
     </div>
   );

@@ -1,55 +1,88 @@
-
+import { Express } from 'express';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import { Request, Response, NextFunction } from 'express';
+import { storage } from './storage';
+import { eq } from 'drizzle-orm';
+import { users } from '@shared/schema';
+import { db } from './db';
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  picture: string;
-}
-
-declare global {
-  namespace Express {
-    interface Request {
-      user?: User;
-    }
-  }
-}
-
-export const setupAuth = (app: any) => {
+export function setupAuth(app: Express) {
+  // Configure passport to use Google Strategy
   passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID!,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    clientID: process.env.GOOGLE_CLIENT_ID || '',
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
     callbackURL: '/auth/google/callback',
-    scope: ['email', 'profile']
-  },
+    scope: ['profile', 'email']
+  }, 
   async (accessToken, refreshToken, profile, done) => {
-    const user = {
-      id: profile.id,
-      name: profile.displayName,
-      email: profile.emails?.[0]?.value,
-      picture: profile.photos?.[0]?.value
-    };
-    return done(null, user);
+    try {
+      // Check if user already exists in our database
+      let user = await storage.getUserByGoogleId(profile.id);
+      
+      if (!user) {
+        // If user doesn't exist, create a new one
+        const email = profile.emails && profile.emails[0] ? profile.emails[0].value : '';
+        const displayName = profile.displayName || '';
+        const profilePicture = profile.photos && profile.photos[0] ? profile.photos[0].value : '';
+        
+        // Check if the email is already registered
+        const existingUserWithEmail = email ? await storage.getUserByEmail(email) : null;
+        
+        if (existingUserWithEmail) {
+          // Update existing user with Google info
+          await db.update(users)
+            .set({
+              googleId: profile.id,
+              profilePicture: profilePicture || existingUserWithEmail.profilePicture
+            })
+            .where(eq(users.id, existingUserWithEmail.id));
+          
+          user = await storage.getUser(existingUserWithEmail.id);
+        } else {
+          // Create completely new user
+          user = await storage.createUser({
+            username: `user_${profile.id}`,
+            email,
+            displayName,
+            googleId: profile.id,
+            profilePicture
+          });
+          
+          // Create user stats for the new user
+          await storage.createUserStats({
+            userId: user.id,
+            totalReviews: 0,
+            totalCorrect: 0,
+            currentStreak: 0,
+            longestStreak: 0,
+            cardsLearned: 0,
+            studyTime: 0
+          });
+        }
+      }
+      
+      return done(null, user);
+    } catch (error) {
+      return done(error as Error);
+    }
   }));
-
+  
+  // Serialize user to session
   passport.serializeUser((user: any, done) => {
-    done(null, user);
+    done(null, user.id);
   });
-
-  passport.deserializeUser((user: any, done) => {
-    done(null, user);
+  
+  // Deserialize user from session
+  passport.deserializeUser(async (id: number, done) => {
+    try {
+      const user = await storage.getUser(id);
+      done(null, user);
+    } catch (error) {
+      done(error);
+    }
   });
-
+  
+  // Initialize passport
   app.use(passport.initialize());
   app.use(passport.session());
-};
-
-export const ensureAuth = (req: Request, res: Response, next: NextFunction) => {
-  if (req.isAuthenticated()) {
-    return next();
-  }
-  res.status(401).json({ message: 'Unauthorized' });
-};
+}

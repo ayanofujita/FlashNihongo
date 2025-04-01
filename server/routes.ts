@@ -2,8 +2,15 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { searchWord } from "./jisho-api";
-import { insertDeckSchema, insertCardSchema, insertUserStatsSchema } from "@shared/schema";
+import { insertDeckSchema, insertCardSchema, insertUserStatsSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
+
+// Extend the Express Request type to include our custom session properties
+declare module 'express-session' {
+  interface SessionData {
+    userId?: number;
+  }
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Deck routes
@@ -389,6 +396,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error updating user stats:", error);
       res.status(500).json({ message: "Failed to update user stats" });
     }
+  });
+
+  // User routes
+  app.get("/api/user", async (req, res) => {
+    try {
+      // Get user from session (this would be set by Passport or other auth middleware)
+      const userId = req.session?.userId;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Don't send sensitive data to the client
+      const { password, ...safeUser } = user;
+      res.json(safeUser);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Google auth integration route - handle data from Firebase
+  app.post("/api/auth/google", async (req, res) => {
+    try {
+      const { googleId, email, displayName, profilePicture } = req.body;
+      
+      if (!googleId || !email) {
+        return res.status(400).json({ message: "Google ID and email are required" });
+      }
+      
+      // Check if user with this Google ID already exists
+      let user = await storage.getUserByGoogleId(googleId);
+      
+      if (!user) {
+        // Check if user with this email exists
+        user = await storage.getUserByEmail(email);
+        
+        if (user) {
+          // Update existing user with Google info
+          user = await storage.updateUser(user.id, { 
+            googleId, 
+            displayName: displayName || user.displayName,
+            profilePicture: profilePicture || user.profilePicture
+          });
+        } else {
+          // Create new user
+          const username = email.split('@')[0]; // Use first part of email as username
+          user = await storage.createUser({
+            username,
+            email,
+            googleId,
+            displayName: displayName || username,
+            profilePicture: profilePicture || null
+          });
+
+          // Also create user stats for the new user
+          await storage.createUserStats({
+            userId: user.id,
+            totalReviews: 0,
+            totalCorrect: 0,
+            currentStreak: 0,
+            longestStreak: 0,
+            lastStudyDate: null,
+            cardsLearned: 0,
+            studyTime: 0
+          });
+        }
+      }
+      
+      // Set user ID in session
+      req.session.userId = user.id;
+      
+      // Don't send sensitive data to the client
+      const { password, ...safeUser } = user;
+      res.status(200).json(safeUser);
+    } catch (error) {
+      console.error("Error authenticating with Google:", error);
+      res.status(500).json({ message: "Authentication failed" });
+    }
+  });
+
+  // Logout route
+  app.post("/api/auth/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        console.error("Error destroying session:", err);
+        return res.status(500).json({ message: "Logout failed" });
+      }
+      res.status(200).json({ message: "Logged out successfully" });
+    });
   });
 
   const httpServer = createServer(app);

@@ -11,8 +11,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { BarChart, Settings, ChevronDown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useUser } from "@/components/auth/UserContext";
 
 const Header = () => {
+  const { user } = useUser();
+  
   return (
     <header className="bg-white shadow">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -39,31 +42,48 @@ const Header = () => {
             </Link>
           </Button>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="flex items-center space-x-1"
-                onClick={() => window.location.href = '/auth/google'}
-              >
-                <Avatar className="w-8 h-8">
-                  <AvatarImage src={user?.picture} />
-                  <AvatarFallback>?</AvatarFallback>
-                </Avatar>
-                <span className="hidden md:inline">
-                  {user?.name || "Sign in with Google"}
-                </span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Profile</DropdownMenuItem>
-              <DropdownMenuItem>Settings</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Log out</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="flex items-center space-x-1"
+                >
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={user.profilePicture || undefined} />
+                    <AvatarFallback>{user.displayName?.[0] || user.username[0]}</AvatarFallback>
+                  </Avatar>
+                  <span className="hidden md:inline">
+                    {user.displayName || user.username}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/profile">Profile</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <a href="/auth/logout">Log out</a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button
+              variant="ghost"
+              className="flex items-center space-x-1"
+              onClick={() => window.location.href = '/auth/google'}
+            >
+              <Avatar className="w-8 h-8">
+                <AvatarFallback>?</AvatarFallback>
+              </Avatar>
+              <span className="hidden md:inline">
+                Sign in with Google
+              </span>
+            </Button>
+          )}
         </div>
       </div>
     </header>

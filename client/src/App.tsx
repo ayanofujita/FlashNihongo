@@ -12,6 +12,8 @@ import StudyPage from "@/pages/StudyPage";
 import QuizPage from "@/pages/QuizPage";
 import SearchPage from "@/pages/SearchPage";
 import DeckViewPage from "@/pages/DeckViewPage";
+import ProfilePage from "@/pages/ProfilePage";
+import { UserProvider } from "@/components/auth/UserContext";
 
 function Router() {
   return (
@@ -30,6 +32,7 @@ function Router() {
             <Route path="/study/:deckId?" component={StudyPage} />
             <Route path="/quiz/:deckId?" component={QuizPage} />
             <Route path="/search" component={SearchPage} />
+            <Route path="/profile" component={ProfilePage} />
             <Route component={NotFound} />
           </Switch>
         </main>
@@ -45,8 +48,10 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router />
-      <Toaster />
+      <UserProvider>
+        <Router />
+        <Toaster />
+      </UserProvider>
     </QueryClientProvider>
   );
 }

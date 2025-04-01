@@ -1,9 +1,12 @@
 import { useLocation, Link } from "wouter";
 import { Home, Book, GraduationCap, HelpCircle, Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LoginButton } from "@/components/auth/LoginButton";
+import { useUser } from "@/components/auth/UserContext";
 
 const Sidebar = () => {
   const [location] = useLocation();
+  const { user } = useUser();
   
   const isActive = (path: string) => {
     if (path === "/") return location === "/";
@@ -24,16 +27,20 @@ const Sidebar = () => {
       
       {/* User Profile Section */}
       <div className="p-4 border-b flex-shrink-0">
-        <div className="flex items-center space-x-3">
-          <Avatar className="w-10 h-10">
-            <AvatarImage src="https://github.com/shadcn.png" />
-            <AvatarFallback>U</AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="font-medium">Username</p>
-            <p className="text-sm text-gray-500">Student</p>
+        {user ? (
+          <div className="flex items-center space-x-3">
+            <Avatar className="w-10 h-10">
+              <AvatarImage src={user.profilePicture || undefined} />
+              <AvatarFallback>{user.displayName?.[0] || user.username[0]}</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-medium">{user.displayName || user.username}</p>
+              <p className="text-sm text-gray-500">{user.email}</p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <LoginButton />
+        )}
       </div>
       
       {/* Navigation Links */}
