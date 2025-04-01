@@ -44,20 +44,65 @@ export class MemStorage implements IStorage {
   private deckIdCounter: number;
   private cardIdCounter: number;
   private studyProgressIdCounter: number;
+  
+  // Store data in memory between server restarts
+  private static instance: {
+    users: Map<number, User>;
+    decks: Map<number, Deck>;
+    cards: Map<number, Card>;
+    studyProgresses: Map<string, StudyProgress>;
+    userIdCounter: number;
+    deckIdCounter: number;
+    cardIdCounter: number;
+    studyProgressIdCounter: number;
+  } | null = null;
 
   constructor() {
-    this.users = new Map();
-    this.decks = new Map();
-    this.cards = new Map();
-    this.studyProgresses = new Map();
-    
-    this.userIdCounter = 1;
-    this.deckIdCounter = 1;
-    this.cardIdCounter = 1;
-    this.studyProgressIdCounter = 1;
-    
-    // Add some initial sample data
-    this.loadSampleData();
+    // Check if we have stored data
+    if (MemStorage.instance) {
+      // Use stored data
+      this.users = MemStorage.instance.users;
+      this.decks = MemStorage.instance.decks;
+      this.cards = MemStorage.instance.cards;
+      this.studyProgresses = MemStorage.instance.studyProgresses;
+      this.userIdCounter = MemStorage.instance.userIdCounter;
+      this.deckIdCounter = MemStorage.instance.deckIdCounter;
+      this.cardIdCounter = MemStorage.instance.cardIdCounter;
+      this.studyProgressIdCounter = MemStorage.instance.studyProgressIdCounter;
+      console.log("Using persistent memory storage data");
+    } else {
+      // Initialize new data
+      this.users = new Map();
+      this.decks = new Map();
+      this.cards = new Map();
+      this.studyProgresses = new Map();
+      
+      this.userIdCounter = 1;
+      this.deckIdCounter = 1;
+      this.cardIdCounter = 1;
+      this.studyProgressIdCounter = 1;
+      
+      // Add some initial sample data
+      this.loadSampleData();
+      
+      // Store the instance
+      this.saveInstance();
+      console.log("Initialized new memory storage data");
+    }
+  }
+  
+  // Save current state to static instance
+  private saveInstance(): void {
+    MemStorage.instance = {
+      users: this.users,
+      decks: this.decks,
+      cards: this.cards,
+      studyProgresses: this.studyProgresses,
+      userIdCounter: this.userIdCounter,
+      deckIdCounter: this.deckIdCounter,
+      cardIdCounter: this.cardIdCounter,
+      studyProgressIdCounter: this.studyProgressIdCounter
+    };
   }
 
   private loadSampleData() {
@@ -143,6 +188,7 @@ export class MemStorage implements IStorage {
     const id = this.userIdCounter++;
     const user: User = { ...insertUser, id };
     this.users.set(id, user);
+    this.saveInstance(); // Save changes
     return user;
   }
 
@@ -173,6 +219,7 @@ export class MemStorage implements IStorage {
       lastStudied: null
     };
     this.decks.set(id, newDeck);
+    this.saveInstance(); // Save changes
     return newDeck;
   }
 
@@ -182,6 +229,7 @@ export class MemStorage implements IStorage {
 
     const updatedDeck: Deck = { ...existingDeck, ...deck };
     this.decks.set(id, updatedDeck);
+    this.saveInstance(); // Save changes
     return updatedDeck;
   }
 
@@ -195,7 +243,9 @@ export class MemStorage implements IStorage {
       await this.deleteCard(card.id);
     }
     
-    return this.decks.delete(id);
+    const result = this.decks.delete(id);
+    this.saveInstance(); // Save changes
+    return result;
   }
 
   async updateDeckLastStudied(id: number): Promise<boolean> {
@@ -204,6 +254,7 @@ export class MemStorage implements IStorage {
     
     deck.lastStudied = new Date();
     this.decks.set(id, deck);
+    this.saveInstance(); // Save changes
     return true;
   }
 
@@ -233,6 +284,7 @@ export class MemStorage implements IStorage {
       createdAt: now
     };
     this.cards.set(id, newCard);
+    this.saveInstance(); // Save changes
     return newCard;
   }
 
@@ -242,6 +294,7 @@ export class MemStorage implements IStorage {
 
     const updatedCard: Card = { ...existingCard, ...card };
     this.cards.set(id, updatedCard);
+    this.saveInstance(); // Save changes
     return updatedCard;
   }
 
@@ -261,7 +314,9 @@ export class MemStorage implements IStorage {
       this.studyProgresses.delete(key);
     });
     
-    return this.cards.delete(id);
+    const result = this.cards.delete(id);
+    this.saveInstance(); // Save changes
+    return result;
   }
 
   // Study progress operations
@@ -346,6 +401,9 @@ export class MemStorage implements IStorage {
     }
     
     this.studyProgresses.set(key, progress);
+    this.saveInstance(); // Save changes to persistent storage
+    
+    console.log(`Progress updated for card ${cardId}, next review: ${progress.nextReview?.toISOString()}`);
     return progress;
   }
 }

@@ -382,12 +382,12 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
                 back={
                   <>
                     <div className="text-4xl font-jp font-medium text-gray-800 mb-3">{currentCard.front}</div>
-                    <div className="font-medium text-gray-800 text-2xl mb-2">{currentCard.back}</div>
-                    <div className="text-gray-600 mb-3">{currentCard.partOfSpeech}, {currentCard.reading}</div>
+                    <div className="font-medium text-gray-800 text-xl mb-2">{currentCard.back}</div>
+                    <div className="text-gray-600 text-sm mb-3">{currentCard.partOfSpeech}, {currentCard.reading}</div>
                     {currentCard.example && (
                       <>
-                        <div className="text-gray-600 italic">{currentCard.example}</div>
-                        <div className="text-gray-600 italic">{currentCard.exampleTranslation}</div>
+                        <div className="text-gray-600 italic text-sm">{currentCard.example}</div>
+                        <div className="text-gray-600 italic text-sm">{currentCard.exampleTranslation}</div>
                       </>
                     )}
                   </>
