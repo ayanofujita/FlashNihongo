@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="192px" height="192px" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4f46e5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="160" height="160" rx="20" ry="20" fill="url(#gradient)" />
+  
+  <!-- Kanji character for "study" (学) -->
+  <path d="M96 50 Q96 45, 130 45 Q130 45, 130 55 Q130 55, 96 50 Z" fill="white" />
+  <path d="M62 45 Q62 45, 96 50 Q96 55, 62 55 Q62 55, 62 45 Z" fill="white" />
+  <path d="M96 50 L96 75 L126 73 L126 78 L96 80 L96 120 Q96 120, 116 115 Q116 115, 116 120 Q116 120, 96 125 L96 140 L126 135 L126 140 L96 145 L96 160 L90 160 L90 146 L64 150 L64 145 L90 141 L90 126 Q90 126, 70 130 Q70 130, 70 125 Q70 125, 90 120 L90 82 L64 85 L64 80 L90 77 L90 48 Z" fill="white" />
+  
+  <!-- Flashcard representation -->
+  <rect x="46" y="90" width="100" height="70" rx="5" ry="5" fill="white" opacity="0.2" />
+  <rect x="51" y="95" width="90" height="60" rx="3" ry="3" fill="white" opacity="0.3" />
+</svg>
