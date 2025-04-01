@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -67,8 +68,8 @@ const DeckCard = ({ id, name, description, cardCount, lastStudied }: DeckCardPro
 
   return (
     <>
-      <Card className="overflow-hidden border border-gray-200 hover:shadow-lg transition">
-        <CardContent className="p-5">
+      <Card className="overflow-hidden border border-gray-200 hover:shadow-lg transition flex flex-col h-full">
+        <CardContent className="p-5 flex-1">
           <div className="flex justify-between items-start">
             <h3 className="text-lg font-bold text-gray-800">{name}</h3>
             <div className="flex space-x-2">
