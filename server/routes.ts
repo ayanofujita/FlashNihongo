@@ -238,14 +238,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/decks/due", async (req, res) => {
     try {
       const userId = parseInt(req.query.userId as string) || 1;
+      const decks = await storage.getDecks();
       
+      if (!decks || decks.length === 0) {
+        return res.json([]);
+      }
+
       if (req.query.deckId) {
-        // If a specific deck ID is requested
         const deckId = parseInt(req.query.deckId as string);
-        const deck = await storage.getDeck(deckId);
+        const deck = decks.find(d => d.id === deckId);
         
         if (!deck) {
-          return res.status(404).json({ message: "Deck not found" });
+          return res.json([]); // Return empty array instead of 404
         }
         
         const dueCards = await storage.getCardsDueForReview(userId, [deckId]);
@@ -258,10 +262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(deckWithDueInfo);
       }
       
-      // Get all decks if no deck ID specified
-      const decks = await storage.getDecks();
-      
-      // For each deck, check if there are any due cards
+      // Get all decks with due info
       const decksWithDueInfo = await Promise.all(
         decks.map(async (deck) => {
           const dueCards = await storage.getCardsDueForReview(userId, [deck.id]);
@@ -275,12 +276,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Only return decks with due cards if filter=true is specified
       if (req.query.filter === 'true') {
-        const filtered = decksWithDueInfo.filter(deck => deck.hasDueCards);
-        return res.json(filtered);
+        return res.json(decksWithDueInfo.filter(deck => deck.hasDueCards));
       }
       
-      res.json(decksWithDueInfo);
+      return res.json(decksWithDueInfo);
     } catch (error) {
+      console.error("Error fetching due decks:", error);
       res.status(500).json({ message: "Failed to fetch decks with due info" });
     }
   });
