@@ -1,10 +1,12 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import pgSession from "connect-pg-simple";
 import passport from "passport";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeDatabase } from "./init-db";
 import { setupAuth } from "./auth";
+import { pool } from "./db";
 
 const app = express();
 app.use(express.json());
@@ -41,10 +43,38 @@ app.use((req, res, next) => {
   next();
 });
 
+const PostgresqlStore = pgSession(session);
+
+// Create session table if needed
+(async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS "session" (
+        "sid" varchar NOT NULL COLLATE "default",
+        "sess" json NOT NULL,
+        "expire" timestamp(6) NOT NULL,
+        CONSTRAINT "session_pkey" PRIMARY KEY ("sid")
+      )
+    `);
+    console.log("Session table ready");
+  } catch (err) {
+    console.error("Error creating session table:", err);
+  }
+})();
+
 app.use(session({
+  store: new PostgresqlStore({
+    pool,
+    tableName: 'session',
+    createTableIfMissing: true
+  }),
   secret: process.env.SESSION_SECRET || 'keyboard cat',
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+  }
 }));
 
 setupAuth(app);

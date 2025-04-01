@@ -7,13 +7,28 @@ import { users } from '@shared/schema';
 import { db } from './db';
 
 export function setupAuth(app: Express) {
+  const clientID = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  
+  // Validate required environment variables are present
+  if (!clientID || !clientSecret) {
+    console.error('Missing required Google OAuth environment variables:');
+    if (!clientID) console.error('- GOOGLE_CLIENT_ID is missing');
+    if (!clientSecret) console.error('- GOOGLE_CLIENT_SECRET is missing');
+    console.error('Google authentication will not work until these are provided.');
+  }
+  
+  const callbackURL = process.env.REPLIT_DOMAINS 
+    ? `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}/auth/google/callback`
+    : 'http://localhost:5000/auth/google/callback';
+    
+  console.log('Google OAuth callback URL configured as:', callbackURL);
+  
   // Configure passport to use Google Strategy
   passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID || '',
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-    callbackURL: process.env.REPLIT_DOMAINS 
-      ? `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}/auth/google/callback`
-      : 'http://localhost:5000/auth/google/callback',
+    clientID: clientID || '',
+    clientSecret: clientSecret || '',
+    callbackURL: callbackURL,
     scope: ['profile', 'email']
   }, 
   async (accessToken, refreshToken, profile, done) => {
