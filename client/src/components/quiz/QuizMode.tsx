@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Settings, X, ArrowLeft, ArrowRight } from "lucide-react";
+import { Settings, X } from "lucide-react";
 import QuizCard from "./QuizCard";
 import { useLocation } from "wouter";
 
@@ -88,30 +88,22 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
     if (option === currentCard.back) {
       setScore(score + 1);
     }
-  };
 
-  const handleNext = () => {
-    if (isQuizFinished) return;
-    
-    if (currentQuestionIndex < quizCards.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-      setSelectedOption(null);
-    } else {
-      setIsQuizFinished(true);
-      toast({
-        title: "Quiz Complete",
-        description: `Your score: ${score}/${quizCards.length}`,
-      });
-    }
-  };
-
-  const handlePrevious = () => {
-    if (isQuizFinished) return;
-    
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
-      setSelectedOption(answers[currentQuestionIndex - 1] || null);
-    }
+    // Add a slight delay before moving to next question or finishing
+    setTimeout(() => {
+      if (currentQuestionIndex < quizCards.length - 1) {
+        // Move to next question
+        setCurrentQuestionIndex(currentQuestionIndex + 1);
+        setSelectedOption(null);
+      } else {
+        // Last question answered, finish quiz
+        setIsQuizFinished(true);
+        toast({
+          title: "Quiz Complete",
+          description: `Your score: ${score + (option === currentCard.back ? 1 : 0)}/${quizCards.length}`,
+        });
+      }
+    }, 1000); // 1 second delay to see the result
   };
 
   if (isDeckLoading || isCardsLoading || !quizCards || quizCards.length === 0) {
@@ -219,26 +211,7 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
         </div>
       </div>
 
-      {!isQuizFinished && (
-        <div className="flex justify-between">
-          <Button 
-            variant="outline" 
-            className="flex items-center"
-            onClick={handlePrevious}
-            disabled={currentQuestionIndex === 0}
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" /> Previous
-          </Button>
-          <Button 
-            className="bg-violet-600 hover:bg-violet-700 flex items-center"
-            onClick={handleNext}
-            disabled={!selectedOption}
-          >
-            {currentQuestionIndex < quizCards.length - 1 ? "Next" : "Finish"}
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
-      )}
+      {/* Navigation buttons removed - quiz now automatically advances */}
 
       {isQuizFinished && (
         <div className="mt-8 p-6 bg-white rounded-lg shadow border border-gray-200">
