@@ -65,16 +65,19 @@ export function setupAuth(app: Express) {
             profilePicture
           });
           
-          // Create user stats for the new user
-          await storage.createUserStats({
-            userId: user.id,
-            totalReviews: 0,
-            totalCorrect: 0,
-            currentStreak: 0,
-            longestStreak: 0,
-            cardsLearned: 0,
-            studyTime: 0
-          });
+          // Create user stats for the new user (only if they don't exist)
+          const existingUserStats = await storage.getUserStats(user.id);
+          if (!existingUserStats) {
+            await storage.createUserStats({
+              userId: user.id,
+              totalReviews: 0,
+              totalCorrect: 0,
+              currentStreak: 0,
+              longestStreak: 0,
+              cardsLearned: 0,
+              studyTime: 0
+            });
+          }
         }
       }
       
