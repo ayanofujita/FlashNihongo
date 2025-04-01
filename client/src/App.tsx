@@ -21,53 +21,42 @@ import { UserProvider } from "@/components/auth/UserContext";
 function UpdateNotification() {
   const { toast } = useToast();
   const [newVersionAvailable, setNewVersionAvailable] = useState(false);
+  const [hasCheckedUpdate, setHasCheckedUpdate] = useState(false);
 
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      // Check if there's a new version at an interval
-      const checkForUpdates = () => {
-        navigator.serviceWorker.getRegistration().then(registration => {
-          if (registration) {
-            registration.update()
-              .then(() => {
-                if (registration.waiting) {
-                  // There's a new version waiting
-                  setNewVersionAvailable(true);
-                  
-                  toast({
-                    title: "New version available!",
-                    description: "Refresh to update to the latest version.",
-                    action: (
-                      <button 
-                        className="rounded bg-primary text-primary-foreground px-3 py-1 text-xs"
-                        onClick={() => {
-                          if (registration.waiting) {
-                            // Send message to service worker to skip waiting
-                            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-                          }
-                          window.location.reload();
-                        }}
-                      >
-                        Update Now
-                      </button>
-                    ),
-                    duration: 0, // Don't auto-dismiss
-                  });
-                }
-              });
-          }
-        });
-      };
-      
-      // Check for updates on page load
-      checkForUpdates();
-      
-      // And then check periodically
-      const interval = setInterval(checkForUpdates, 60 * 1000); // Check every minute
-      
-      return () => clearInterval(interval);
+    if ('serviceWorker' in navigator && !hasCheckedUpdate) {
+      // Only check for updates once when component mounts
+      navigator.serviceWorker.getRegistration().then(registration => {
+        if (registration && registration.waiting && !newVersionAvailable) {
+          // There's a new version waiting
+          setNewVersionAvailable(true);
+          
+          toast({
+            title: "New version available!",
+            description: "Refresh to update to the latest version.",
+            action: (
+              <button 
+                className="rounded bg-primary text-primary-foreground px-3 py-1 text-xs"
+                onClick={() => {
+                  if (registration.waiting) {
+                    // Send message to service worker to skip waiting
+                    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                  }
+                  window.location.reload();
+                }}
+              >
+                Update Now
+              </button>
+            ),
+            duration: 0, // Don't auto-dismiss
+          });
+        }
+        
+        // Mark that we've checked for updates
+        setHasCheckedUpdate(true);
+      });
     }
-  }, [toast]);
+  }, [toast, newVersionAvailable, hasCheckedUpdate]);
   
   return null; // This component doesn't render anything visible
 }

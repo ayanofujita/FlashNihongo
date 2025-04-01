@@ -33,9 +33,6 @@
           .then(registration => {
             console.log('ServiceWorker registration successful with scope: ', registration.scope);
             
-            // Check for service worker updates at page load
-            registration.update();
-            
             // Add a listener for updated service workers
             registration.addEventListener('updatefound', () => {
               const newWorker = registration.installing;
@@ -43,12 +40,9 @@
               // Listen to state changes of the new worker
               newWorker.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  // New version available, send skipWaiting message
-                  console.log('New version available! Updating service worker...');
-                  newWorker.postMessage({ type: 'SKIP_WAITING' });
-                  
-                  // Reload the page to ensure the new version is used
-                  window.location.reload();
+                  // New version available
+                  console.log('New version available! Wait for user to trigger update.');
+                  // We'll let the React app handle the update process
                 }
               });
             });
@@ -56,16 +50,6 @@
           .catch(error => {
             console.log('ServiceWorker registration failed: ', error);
           });
-          
-        // Handle case when an updated worker becomes activated
-        let refreshing = false;
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (!refreshing) {
-            refreshing = true;
-            console.log('Controller changed, refreshing page...');
-            window.location.reload();
-          }
-        });
       });
     }
   </script>

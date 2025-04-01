@@ -11,12 +11,6 @@ console.log(`FlashNihongo PWA loaded - Version ${APP_VERSION} (Build: ${BUILD_DA
 // Add a color theme identifier to confirm theme changes
 console.log('%cFlashNihongo - Japanese Learning App', 'color: hsl(238 83% 60%); font-size: 20px; font-weight: bold;');
 
-// Check for service worker updates
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.ready.then(registration => {
-    // Force an update check for the service worker
-    registration.update();
-  });
-}
+// We'll let the UpdateNotification component handle service worker updates
 
 createRoot(document.getElementById("root")!).render(<App />);
