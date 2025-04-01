@@ -1,80 +1,134 @@
-// Service Worker for FlashNihongo PWA
+// Cache name with version
+const CACHE_NAME = 'flashnihongo-v1';
 
-const CACHE_NAME = 'flashnihongo-cache-v1';
-const urlsToCache = [
+// Assets to precache
+const PRECACHE_ASSETS = [
   '/',
   '/index.html',
-  '/src/main.tsx',
-  '/src/index.css',
-  '/icon-192x192.png',
-  '/icon-512x512.png',
+  '/app-icon.svg',
   '/manifest.json'
 ];
 
-// Install event
-self.addEventListener('install', (event) => {
+// Install event - precache assets
+self.addEventListener('install', event => {
+  console.log('Service Worker installing');
+  
+  // Precache static assets
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
+      .then(cache => {
+        console.log('Service Worker: Caching files');
+        return cache.addAll(PRECACHE_ASSETS);
       })
+      .then(() => self.skipWaiting())
   );
 });
 
-// Activate event (clean up old caches)
-self.addEventListener('activate', (event) => {
-  const cacheAllowlist = [CACHE_NAME];
+// Activate event - clean up old caches
+self.addEventListener('activate', event => {
+  console.log('Service Worker activating');
   
+  // Remove old caches
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
+    caches.keys().then(cacheNames => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheAllowlist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
+        cacheNames.map(cache => {
+          if (cache !== CACHE_NAME) {
+            console.log('Service Worker: Clearing old cache', cache);
+            return caches.delete(cache);
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
 });
 
-// Fetch event (serve from cache, fall back to network)
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-
-        // Clone the request
-        const fetchRequest = event.request.clone();
-
-        // API requests should not be cached
-        if (fetchRequest.url.includes('/api/')) {
-          return fetch(fetchRequest);
-        }
-
-        return fetch(fetchRequest).then(
-          (response) => {
-            // Check if valid response
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
+// Fetch event - return cached responses when offline
+self.addEventListener('fetch', event => {
+  // Skip cross-origin requests
+  if (!event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+  
+  // Network-first strategy for API calls
+  if (event.request.url.includes('/api/')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          // Cache a clone of the response
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            // Only cache successful responses
+            if (response.status === 200) {
+              cache.put(event.request, responseClone);
             }
-
-            // Clone the response
-            const responseToCache = response.clone();
-
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-
-            return response;
+          });
+          return response;
+        })
+        .catch(() => {
+          // Try to get from cache if network fails
+          return caches.match(event.request);
+        })
+    );
+  } else {
+    // Cache-first for static assets
+    event.respondWith(
+      caches.match(event.request).then(cachedResponse => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        
+        // Not in cache, get from network
+        return fetch(event.request).then(response => {
+          // Make copy of response
+          const responseClone = response.clone();
+          
+          // Cache the fetched response
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, responseClone);
+          });
+          
+          return response;
+        }).catch(error => {
+          console.error('Service Worker fetch failed:', error);
+          
+          // For HTML documents, return the offline page
+          if (event.request.headers.get('accept').includes('text/html')) {
+            return caches.match('/');
           }
-        );
+          
+          // Otherwise just return the error
+          throw error;
+        });
       })
+    );
+  }
+});
+
+// Handle push notifications
+self.addEventListener('push', event => {
+  const data = event.data.json();
+  
+  const options = {
+    body: data.body,
+    icon: '/app-icon.svg',
+    badge: '/icons/badge-icon.png',
+    vibrate: [100, 50, 100],
+    data: {
+      url: data.url || '/'
+    }
+  };
+  
+  event.waitUntil(
+    self.registration.showNotification('FlashNihongo', options)
+  );
+});
+
+// Handle notification clicks
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  
+  event.waitUntil(
+    clients.openWindow(event.notification.data.url)
   );
 });

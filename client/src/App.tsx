@@ -11,6 +11,7 @@ import DecksPage from "@/pages/DecksPage";
 import StudyPage from "@/pages/StudyPage";
 import QuizPage from "@/pages/QuizPage";
 import SearchPage from "@/pages/SearchPage";
+import SettingsPage from "@/pages/SettingsPage";
 
 function Router() {
   return (
@@ -24,6 +25,7 @@ function Router() {
           <Route path="/study/:deckId?" component={StudyPage} />
           <Route path="/quiz/:deckId?" component={QuizPage} />
           <Route path="/search" component={SearchPage} />
+          <Route path="/settings" component={SettingsPage} />
           <Route component={NotFound} />
         </Switch>
       </main>

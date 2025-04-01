@@ -1,24 +1,58 @@
 {
   "name": "FlashNihongo",
   "short_name": "FlashNihongo",
-  "description": "Japanese learning flashcard application with spaced repetition",
+  "description": "Japanese flashcard app with spaced repetition",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#4f46e5",
+  "theme_color": "#4F46E5",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icon-192x192.png",
-      "type": "image/png",
-      "sizes": "192x192",
-      "purpose": "any maskable"
+      "src": "/app-icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any"
     },
     {
-      "src": "/icon-512x512.png",
+      "src": "/icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
       "type": "image/png",
       "sizes": "512x512",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Study Due Cards",
+      "short_name": "Study",
+      "description": "Review your due cards",
+      "url": "/study",
+      "icons": [{ "src": "/icons/study-icon.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Search Dictionary",
+      "short_name": "Search",
+      "description": "Search the Japanese dictionary",
+      "url": "/search",
+      "icons": [{ "src": "/icons/search-icon.png", "sizes": "192x192" }]
     }
   ]
 }
