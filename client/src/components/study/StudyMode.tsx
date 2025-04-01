@@ -340,11 +340,6 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
   
   // Calculate progress
   const progress = uniqueCardIds.size > 0 ? (completed.length / uniqueCardIds.size) * 100 : 0;
-  
-  // Calculate card position
-  const currentCardNumber = currentCard 
-    ? cardsToStudy.findIndex(card => card.id === currentCard.id) + 1 
-    : 0;
 
   return (
     <div>
