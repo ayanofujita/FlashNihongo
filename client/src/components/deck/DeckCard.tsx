@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -35,13 +34,14 @@ const DeckCard = ({ id, name, description, cardCount, lastStudied }: DeckCardPro
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [addCardDialogOpen, setAddCardDialogOpen] = useState(false);
+  const [showMoreOpen, setShowMoreOpen] = useState(false); // Added state for Show More
 
   const formatLastStudied = () => {
     if (!lastStudied) return "Never studied";
-    
+
     const now = new Date();
     const diffInDays = Math.floor((now.getTime() - lastStudied.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     if (diffInDays === 0) return "Studied today";
     if (diffInDays === 1) return "Studied yesterday";
     if (diffInDays < 7) return `Studied ${diffInDays} days ago`;
@@ -85,7 +85,7 @@ const DeckCard = ({ id, name, description, cardCount, lastStudied }: DeckCardPro
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-              
+
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -98,7 +98,7 @@ const DeckCard = ({ id, name, description, cardCount, lastStudied }: DeckCardPro
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-              
+
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -111,6 +111,23 @@ const DeckCard = ({ id, name, description, cardCount, lastStudied }: DeckCardPro
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={() => setShowMoreOpen(true)}> {/* Added Show More button */}
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-gray-600">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                      </svg>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Show More</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
             </div>
           </div>
           <p className="text-gray-600 mt-2 text-sm">{description}</p>

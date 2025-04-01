@@ -191,7 +191,6 @@ const DeckViewPage = () => {
               <div 
                 key={card.id}
                 className="relative group"
-                onClick={() => handleCardClick(card)}
               >
                 <Flashcard
                   front={card.front}
