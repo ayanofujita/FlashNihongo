@@ -30,7 +30,7 @@ interface StudyModeProps {
 
 // SRS algorithm constants
 const INITIAL_INTERVAL = 1; // 1 day for initial interval
-const EASY_BONUS = 1.3;
+const EASY_BONUS = 2;
 const INTERVAL_MODIFIER = 1;
 const HARD_INTERVAL_FACTOR = 0.5;
 const AGAIN_INTERVAL = 0.1; // ~0.1 days = ~2.4 hours
