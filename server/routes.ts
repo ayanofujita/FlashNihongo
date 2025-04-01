@@ -2,13 +2,13 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { searchWord } from "./jisho-api";
-import { insertDeckSchema, insertCardSchema, insertUserStatsSchema, insertUserSchema } from "@shared/schema";
+import { insertDeckSchema, insertCardSchema, insertUserStatsSchema, insertUserSchema, type User } from "@shared/schema";
 import { z } from "zod";
 
-// Extend the Express Request type to include our custom session properties
-declare module 'express-session' {
-  interface SessionData {
-    userId?: number;
+// Extend Express to work with Passport.js
+declare global {
+  namespace Express {
+    interface User extends Partial<User> {} 
   }
 }
 
@@ -401,21 +401,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User routes
   app.get("/api/user", async (req, res) => {
     try {
-      // Get user from session (this would be set by Passport or other auth middleware)
-      const userId = req.session?.userId;
-      
-      if (!userId) {
+      if (!req.user) {
         return res.status(401).json({ message: "Not authenticated" });
       }
       
+      // Passport puts the user object on req.user
+      // We still want to fetch the latest from the database
+      const userId = (req.user as any).id;
       const user = await storage.getUser(userId);
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       
-      // Don't send sensitive data to the client
-      const { password, ...safeUser } = user;
+      // Create a safe version of the user without sensitive data
+      const safeUser = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        displayName: user.displayName,
+        profilePicture: user.profilePicture,
+        googleId: user.googleId
+      };
+      
       res.json(safeUser);
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -423,74 +431,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Google auth integration route - handle data from Firebase
-  app.post("/api/auth/google", async (req, res) => {
-    try {
-      const { googleId, email, displayName, profilePicture } = req.body;
-      
-      if (!googleId || !email) {
-        return res.status(400).json({ message: "Google ID and email are required" });
-      }
-      
-      // Check if user with this Google ID already exists
-      let user = await storage.getUserByGoogleId(googleId);
-      
-      if (!user) {
-        // Check if user with this email exists
-        user = await storage.getUserByEmail(email);
-        
-        if (user) {
-          // Update existing user with Google info
-          user = await storage.updateUser(user.id, { 
-            googleId, 
-            displayName: displayName || user.displayName,
-            profilePicture: profilePicture || user.profilePicture
-          });
-        } else {
-          // Create new user
-          const username = email.split('@')[0]; // Use first part of email as username
-          user = await storage.createUser({
-            username,
-            email,
-            googleId,
-            displayName: displayName || username,
-            profilePicture: profilePicture || null
-          });
-
-          // Also create user stats for the new user
-          await storage.createUserStats({
-            userId: user.id,
-            totalReviews: 0,
-            totalCorrect: 0,
-            currentStreak: 0,
-            longestStreak: 0,
-            lastStudyDate: null,
-            cardsLearned: 0,
-            studyTime: 0
-          });
-        }
-      }
-      
-      // Set user ID in session
-      req.session.userId = user.id;
-      
-      // Don't send sensitive data to the client
-      const { password, ...safeUser } = user;
-      res.status(200).json(safeUser);
-    } catch (error) {
-      console.error("Error authenticating with Google:", error);
-      res.status(500).json({ message: "Authentication failed" });
-    }
-  });
+  // This endpoint is now handled by Passport.js directly
 
   // Logout route
-  app.post("/api/auth/logout", (req, res) => {
-    req.session.destroy((err) => {
+  app.get("/auth/logout", (req, res) => {
+    // Use Passport's logout function
+    req.logout((err) => {
       if (err) {
-        console.error("Error destroying session:", err);
+        console.error("Error logging out:", err);
         return res.status(500).json({ message: "Logout failed" });
       }
-      res.status(200).json({ message: "Logged out successfully" });
+      // Redirect to home page after successful logout
+      res.redirect('/');
     });
   });
 

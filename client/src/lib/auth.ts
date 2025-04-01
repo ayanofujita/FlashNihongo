@@ -1,41 +1,10 @@
-import { signInWithRedirect, getRedirectResult, signOut } from "firebase/auth";
-import { auth, googleProvider } from "./firebase";
-
-// Sign in with Google
+// Sign in with Google using Passport.js OAuth flow
 export const signInWithGoogle = async () => {
   try {
-    await signInWithRedirect(auth, googleProvider);
+    // Redirect to the server's Google Auth endpoint
+    window.location.href = '/auth/google';
   } catch (error) {
-    console.error("Error signing in with Google:", error);
-    throw error;
-  }
-};
-
-// Handle the redirect result from Google sign-in
-export const handleRedirectResult = async () => {
-  try {
-    const result = await getRedirectResult(auth);
-    if (result) {
-      // User successfully signed in
-      const user = result.user;
-      // Send user info to backend to create/update user in database
-      await fetch("/api/auth/google", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          googleId: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          profilePicture: user.photoURL,
-        }),
-      });
-      return user;
-    }
-    return null;
-  } catch (error) {
-    console.error("Error handling redirect result:", error);
+    console.error("Error starting Google sign in:", error);
     throw error;
   }
 };
@@ -43,15 +12,35 @@ export const handleRedirectResult = async () => {
 // Sign out user
 export const signOutUser = async () => {
   try {
-    await signOut(auth);
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch("/auth/logout");
+    window.location.href = '/';
   } catch (error) {
     console.error("Error signing out:", error);
     throw error;
   }
 };
 
-// Check if user is authenticated
-export const isAuthenticated = () => {
-  return auth.currentUser !== null;
+// Fetch the current user from the server
+export const getCurrentUser = async () => {
+  try {
+    const response = await fetch('/api/user');
+    if (response.ok) {
+      return await response.json();
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching current user:", error);
+    return null;
+  }
+};
+
+// For compatibility with existing code
+export const handleRedirectResult = async () => {
+  return await getCurrentUser();
+};
+
+// Check if user is authenticated by making a server request
+export const isAuthenticated = async () => {
+  const user = await getCurrentUser();
+  return user !== null;
 };

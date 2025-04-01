@@ -1,7 +1,5 @@
 import { createContext, useContext, ReactNode, useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "@/lib/firebase";
 import { handleRedirectResult } from "@/lib/auth";
 
 // Define the User type based on our backend User schema
@@ -28,8 +26,8 @@ const UserContext = createContext<UserContextType>({
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
-  const [firebaseLoading, setFirebaseLoading] = useState(true);
-  const [firebaseError, setFirebaseError] = useState<Error | null>(null);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [authError, setAuthError] = useState<Error | null>(null);
   
   // Query for user data from our backend
   const { data: user, isLoading: userQueryLoading, error: userQueryError } = useQuery<User | null>({
@@ -38,40 +36,24 @@ export function UserProvider({ children }: { children: ReactNode }) {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  // Handle Firebase authentication state changes
+  // Check authentication status on mount and after redirects
   useEffect(() => {
-    // Check for redirect result on page load
+    // Check for authentication status on page load
     handleRedirectResult()
-      .then((firebaseUser) => {
-        if (firebaseUser) {
-          // If Firebase auth redirected and authenticated successfully,
-          // invalidate the user query to fetch updated user data
-          queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+      .then((serverUser) => {
+        if (serverUser) {
+          // If we got user data back from the server, make sure it's in our cache
+          queryClient.setQueryData(['/api/user'], serverUser);
         }
       })
       .catch((err) => {
-        console.error("Firebase redirect error:", err);
-        setFirebaseError(err as Error);
+        console.error("Authentication check error:", err);
+        setAuthError(err as Error);
       })
       .finally(() => {
-        setFirebaseLoading(false);
+        setInitialLoading(false);
       });
-
-    // Listen for auth state changes
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        // User is signed in, invalidate the user query
-        queryClient.invalidateQueries({ queryKey: ['/api/user'] });
-      } else if (user) {
-        // User is signed out but we have a user in state
-        // Invalidate the user query to update state
-        queryClient.invalidateQueries({ queryKey: ['/api/user'] });
-      }
-      setFirebaseLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [queryClient, user]);
+  }, [queryClient]);
 
   // Set up an interval to refresh the user data every 15 minutes
   useEffect(() => {
@@ -82,8 +64,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(intervalId);
   }, [queryClient]);
 
-  const isLoading = userQueryLoading || firebaseLoading;
-  const error = userQueryError || firebaseError;
+  const isLoading = userQueryLoading || initialLoading;
+  const error = userQueryError || authError;
 
   return (
     <UserContext.Provider value={{ user: user || null, isLoading, error: error as Error | null }}>
