@@ -289,15 +289,17 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
   };
 
   const getIntervalText = (rating: 'again' | 'hard' | 'good' | 'easy') => {
+    const hours = (interval: number) => interval * 24;
+    
     switch (rating) {
       case 'again':
-        return '< 10 min';
+        return `${Math.round(hours(AGAIN_INTERVAL))}h`;
       case 'hard':
-        return '1 day';
+        return `${Math.round(INITIAL_INTERVAL * HARD_INTERVAL_FACTOR)}d`;
       case 'good':
-        return '3 days';
+        return `${Math.round(INITIAL_INTERVAL * INTERVAL_MODIFIER)}d`;
       case 'easy':
-        return '7 days';
+        return `${Math.round(INITIAL_INTERVAL * EASY_BONUS * INTERVAL_MODIFIER)}d`;
     }
   };
 
