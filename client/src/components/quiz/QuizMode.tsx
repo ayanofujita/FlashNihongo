@@ -222,7 +222,7 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
 
   return (
     <div>
-      <div className="mb-6 flex justify-between items-center">
+      <div className="mb-6 flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
           <h2 className="text-xl font-bold">Quiz: {deck?.name}</h2>
           <p className="text-gray-600 text-sm mt-1">
@@ -232,17 +232,21 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
             }
           </p>
         </div>
-        <div className="flex space-x-4">
+        <div className="flex space-x-2 md:space-x-4">
           {!isQuizFinished && (
             <Button 
               variant="outline" 
-              className="flex items-center"
+              className="flex items-center whitespace-nowrap"
               onClick={() => setShowOptionsDialog(true)}
             >
               <Settings className="mr-1 h-4 w-4" /> Options
             </Button>
           )}
-          <Button variant="outline" className="flex items-center" onClick={() => navigate('/decks')}>
+          <Button 
+            variant="outline" 
+            className="flex items-center whitespace-nowrap" 
+            onClick={() => navigate('/decks')}
+          >
             <X className="mr-1 h-4 w-4" /> Exit
           </Button>
         </div>
@@ -263,7 +267,16 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
             </label>
             <Select 
               value={quizType} 
-              onValueChange={(value: QuizType) => setQuizType(value)}
+              onValueChange={(value: QuizType) => {
+                // Only show warning if the user has made progress
+                if (currentQuestionIndex > 0) {
+                  if (window.confirm("Changing quiz mode will reset your current progress. Continue?")) {
+                    setQuizType(value);
+                  }
+                } else {
+                  setQuizType(value);
+                }
+              }}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select quiz type" />
@@ -276,18 +289,26 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
                       <span>By Meaning (English)</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="reading">
-                    <div className="flex items-center">
-                      <FileText className="h-4 w-4 mr-2" />
-                      <span>By Reading (Japanese)</span>
-                    </div>
-                  </SelectItem>
+                  {/* Only show reading mode if at least one card has a reading */}
+                  {cards && cards.some(card => card.reading && card.reading.trim() !== "") && (
+                    <SelectItem value="reading">
+                      <div className="flex items-center">
+                        <FileText className="h-4 w-4 mr-2" />
+                        <span>By Reading (Japanese)</span>
+                      </div>
+                    </SelectItem>
+                  )}
                 </SelectGroup>
               </SelectContent>
             </Select>
+            {currentQuestionIndex > 0 && (
+              <p className="text-amber-600 text-xs mt-2">
+                ⚠️ Changing quiz mode will reset your current progress
+              </p>
+            )}
           </div>
           <DialogFooter>
-            <Button onClick={() => setShowOptionsDialog(false)}>Apply Changes</Button>
+            <Button onClick={() => setShowOptionsDialog(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
