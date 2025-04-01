@@ -44,15 +44,15 @@ const QuizCard = ({
           {options.map((option, index) => (
             <button
               key={index}
-              className={`border overflow-hidden border-gray-300 rounded-lg py-3 px-4 text-left hover:bg-gray-50 transition ${getOptionStyle(option)}`}
+              className={`border border-gray-300 rounded-lg py-3 px-4 text-left hover:bg-gray-50 transition overflow-hidden ${getOptionStyle(option)}`}
               onClick={() => onSelect(option)}
               disabled={selectedOption !== null}
             >
-              <div className="flex">
+              <div className="flex w-full overflow-hidden">
                 <span className="font-medium mr-2 flex-shrink-0">
                   {["A", "B", "C", "D"][index]}.
                 </span>
-                <span className="break-words w-full">{option}</span>
+                <span className="truncate overflow-hidden text-ellipsis">{option}</span>
               </div>
             </button>
           ))}

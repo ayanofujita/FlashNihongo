@@ -58,9 +58,9 @@ const SearchResult = ({ result, onAddToDeck }: SearchResultProps) => {
 
   return (
     <div className="p-5 border-b border-gray-200 last:border-b-0">
-      <div className="flex justify-between items-start">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
+      <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+        <div className="w-full">
+          <div className="flex flex-wrap items-center gap-3 mb-2">
             <span className="text-2xl font-jp font-medium">{getMainWord()}</span>
             <span className="text-gray-600">{getReading()}</span>
             <Badge className={`${getBadgeVariant()} text-xs px-2 py-1`}>
@@ -78,7 +78,7 @@ const SearchResult = ({ result, onAddToDeck }: SearchResultProps) => {
           )}
         </div>
         <Button 
-          className="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 h-auto"
+          className="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 h-auto whitespace-nowrap"
           onClick={onAddToDeck}
         >
           <Plus className="h-4 w-4 mr-1" /> Add to Deck
