@@ -191,11 +191,11 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
               key={index}
               variant="outline"
               className={`flex justify-start h-auto py-3 px-4 text-left ${
-                selectedOption === option 
-                  ? selectedOption === currentCard.back
-                    ? "border-green-500 bg-green-50"
-                    : "border-red-500 bg-red-50"
-                  : ""
+                option === currentCard.back
+                  ? "border-green-500 bg-green-50"
+                  : selectedOption === option
+                    ? "border-red-500 bg-red-50"
+                    : ""
               }`}
               onClick={() => handleOptionSelect(option)}
               disabled={selectedOption !== null}
