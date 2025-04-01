@@ -81,9 +81,21 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       console.log("Due cards:", dueCards); // Debug log to see all cards
       
       // Update unique card IDs (for accurate due cards count)
-      const newUniqueIds = new Set(uniqueCardIds);
-      dueCards.forEach(card => newUniqueIds.add(card.id));
-      setUniqueCardIds(newUniqueIds);
+      // Use functional update to avoid dependency on uniqueCardIds
+      setUniqueCardIds(prevIds => {
+        const newUniqueIds = new Set(prevIds);
+        let hasChanges = false;
+        
+        dueCards.forEach(card => {
+          if (!prevIds.has(card.id)) {
+            newUniqueIds.add(card.id);
+            hasChanges = true;
+          }
+        });
+        
+        // Only trigger a state update if we added new IDs
+        return hasChanges ? newUniqueIds : prevIds;
+      });
       
       // Check if we have new cards that weren't in our study session before
       const newCards = dueCards.filter(
@@ -107,7 +119,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     } else {
       console.log("No cards to study or dueCards is empty");
     }
-  }, [dueCards, currentCard, cardsToStudy, uniqueCardIds]);
+  }, [dueCards, currentCard, cardsToStudy]);
 
   const updateProgress = useMutation({
     mutationFn: async ({ 
@@ -201,14 +213,21 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
           // Move to the next card
           setCurrentCard(remainingCards[0]);
           
-          // After a delay, add the "again" card back to cardsToStudy at the end
+          // After a delay, requeue this card at the END of the deck
           // This ensures the user doesn't see the same card twice in a row
           setTimeout(() => {
             console.log("Adding card back to study queue:", cardToReview);
-            setCardsToStudy(prev => [...prev, cardToReview]);
+            // Remove any existing instances of this card from the queue (by ID)
+            setCardsToStudy(prev => {
+              const filteredCards = prev.filter(c => c.id !== cardToReview.id);
+              // Now add it back at the end
+              return [...filteredCards, cardToReview];
+            });
           }, 500);
         } else {
           // Show the card again immediately if it was the only one
+          // But first, update the cardsToStudy to only have one instance of this card
+          setCardsToStudy([cardToReview]);
           setCurrentCard(cardToReview);
         }
       } else {
