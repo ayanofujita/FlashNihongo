@@ -6,6 +6,34 @@ import { initializeDatabase } from "./init-db";
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'keyboard cat',
+  resave: false,
+  saveUninitialized: false
+}));
+
+setupAuth(app);
+
+app.get('/auth/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+app.get('/auth/google/callback',
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  (req, res) => {
+    res.redirect('/');
+  }
+);
+
+app.get('/api/user', (req, res) => {
+  res.json(req.user || null);
+});
+
+app.get('/auth/logout', (req, res) => {
+  req.logout(() => {
+    res.redirect('/');
+  });
+});
 
 app.use((req, res, next) => {
   const start = Date.now();

@@ -41,13 +41,18 @@ const Header = () => {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center space-x-1">
+              <Button
+                variant="ghost"
+                className="flex items-center space-x-1"
+                onClick={() => window.location.href = '/auth/google'}
+              >
                 <Avatar className="w-8 h-8">
-                  <AvatarImage src="https://github.com/shadcn.png" />
-                  <AvatarFallback>U</AvatarFallback>
+                  <AvatarImage src={user?.picture} />
+                  <AvatarFallback>?</AvatarFallback>
                 </Avatar>
-                <span className="hidden md:inline">Username</span>
-                <ChevronDown className="h-4 w-4" />
+                <span className="hidden md:inline">
+                  {user?.name || "Sign in with Google"}
+                </span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
