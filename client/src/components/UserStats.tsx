@@ -19,7 +19,7 @@ interface UserStats {
   studyTime: number;
 }
 
-export const UserStats = ({ userId = 1 }: UserStatsProps) => {
+export const UserStats = ({ userId }: UserStatsProps) => {
   const { data: stats, isLoading, error } = useQuery<UserStats>({
     queryKey: [`/api/user-stats/${userId}`],
     enabled: !!userId,
