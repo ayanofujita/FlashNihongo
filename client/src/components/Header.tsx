@@ -19,12 +19,11 @@ const Header = () => {
         <div className="flex items-center">
           <Link href="/">
             <a className="flex items-center">
-              <h1 className="text-2xl font-bold text-blue-600">日本語Flash</h1>
-              <span className="ml-2 text-sm text-gray-500">NihongoFlash</span>
+              <h1 className="text-2xl font-bold text-blue-600">Flash日本語</h1>
             </a>
           </Link>
         </div>
-        
+
         <div className="flex items-center space-x-4">
           <Button variant="ghost" className="hidden md:flex" asChild>
             <Link href="/stats">
@@ -32,14 +31,14 @@ const Header = () => {
               Stats
             </Link>
           </Button>
-          
+
           <Button variant="ghost" className="hidden md:flex" asChild>
             <Link href="/settings">
               <Settings className="mr-1 h-4 w-4" />
               Settings
             </Link>
           </Button>
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center space-x-1">
