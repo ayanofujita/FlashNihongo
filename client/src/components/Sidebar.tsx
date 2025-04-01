@@ -28,16 +28,18 @@ const Sidebar = () => {
       {/* User Profile Section */}
       <div className="p-4 border-b flex-shrink-0">
         {user ? (
-          <div className="flex items-center space-x-3">
-            <Avatar className="w-10 h-10">
-              <AvatarImage src={user.profilePicture || undefined} />
-              <AvatarFallback>{user.displayName?.[0] || user.username[0]}</AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="font-medium">{user.displayName || user.username}</p>
-              <p className="text-sm text-gray-500">{user.email}</p>
-            </div>
-          </div>
+          <Link href="/profile">
+            <a className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity">
+              <Avatar className="w-10 h-10">
+                <AvatarImage src={user.profilePicture || undefined} />
+                <AvatarFallback>{user.displayName?.[0] || user.username[0]}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-medium">{user.displayName || user.username}</p>
+                <p className="text-sm text-gray-500">{user.email}</p>
+              </div>
+            </a>
+          </Link>
         ) : (
           <LoginButton />
         )}

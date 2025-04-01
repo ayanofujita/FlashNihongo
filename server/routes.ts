@@ -24,24 +24,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Deck routes
   app.get("/api/decks", async (req, res) => {
     try {
-      const decks = await storage.getDecks();
+      // Get the authenticated user from the request
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      // Get only the decks owned by the user
+      const decks = await storage.getDecksByUserId(userId);
       res.json(decks);
     } catch (error) {
+      console.error("Error fetching decks:", error);
       res.status(500).json({ message: "Failed to fetch decks" });
     }
   });
 
   app.get("/api/decks/due", async (req, res) => {
     try {
-      const userId = parseInt(req.query.userId as string) || 1;
-      const decks = await storage.getDecks();
+      // Get the authenticated user from the request
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      // Get only the decks owned by the user
+      const decks = await storage.getDecksByUserId(userId);
 
       if (!decks || decks.length === 0) {
-        console.log("No decks found.");
+        console.log("No decks found for user.");
         return res.json([]);
       }
 
-      console.log("Fetching due info for all decks...");
+      console.log(`Fetching due info for ${decks.length} decks owned by user ${userId}...`);
       
       const decksWithDueInfo = await Promise.all(
         decks.map(async (deck) => {
@@ -72,21 +88,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/decks/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
       const deck = await storage.getDeck(id);
 
       if (!deck) {
         return res.status(404).json({ message: "Deck not found" });
       }
+      
+      // Check if the user owns this deck
+      if (deck.userId !== userId) {
+        return res.status(403).json({ message: "You don't have permission to access this deck" });
+      }
 
       res.json(deck);
     } catch (error) {
+      console.error("Error fetching deck:", error);
       res.status(500).json({ message: "Failed to fetch deck" });
     }
   });
 
   app.post("/api/decks", async (req, res) => {
     try {
-      const validation = insertDeckSchema.safeParse(req.body);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const validation = insertDeckSchema.safeParse({
+        ...req.body,
+        userId: userId // Always set the user ID to the authenticated user
+      });
 
       if (!validation.success) {
         return res.status(400).json({
@@ -98,6 +135,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const newDeck = await storage.createDeck(validation.data);
       res.status(201).json(newDeck);
     } catch (error) {
+      console.error("Error creating deck:", error);
       res.status(500).json({ message: "Failed to create deck" });
     }
   });
@@ -105,6 +143,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/decks/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // Verify the user owns this deck
+      const deck = await storage.getDeck(id);
+      
+      if (!deck) {
+        return res.status(404).json({ message: "Deck not found" });
+      }
+      
+      if (deck.userId !== userId) {
+        return res.status(403).json({ message: "You don't have permission to update this deck" });
+      }
+      
       const validation = insertDeckSchema.partial().safeParse(req.body);
 
       if (!validation.success) {
@@ -122,6 +177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(updatedDeck);
     } catch (error) {
+      console.error("Error updating deck:", error);
       res.status(500).json({ message: "Failed to update deck" });
     }
   });
@@ -129,6 +185,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/decks/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      // Verify the user owns this deck
+      const deck = await storage.getDeck(id);
+      
+      if (!deck) {
+        return res.status(404).json({ message: "Deck not found" });
+      }
+      
+      if (deck.userId !== userId) {
+        return res.status(403).json({ message: "You don't have permission to delete this deck" });
+      }
+      
       const result = await storage.deleteDeck(id);
 
       if (!result) {
@@ -137,6 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(204).send();
     } catch (error) {
+      console.error("Error deleting deck:", error);
       res.status(500).json({ message: "Failed to delete deck" });
     }
   });
@@ -145,9 +219,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/decks/:deckId/cards", async (req, res) => {
     try {
       const deckId = parseInt(req.params.deckId);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      // Verify the user owns this deck
+      const deck = await storage.getDeck(deckId);
+      
+      if (!deck) {
+        return res.status(404).json({ message: "Deck not found" });
+      }
+      
+      if (deck.userId !== userId) {
+        return res.status(403).json({ message: "You don't have permission to access cards from this deck" });
+      }
+      
       const cards = await storage.getCards(deckId);
       res.json(cards);
     } catch (error) {
+      console.error("Error fetching cards:", error);
       res.status(500).json({ message: "Failed to fetch cards" });
     }
   });
@@ -169,6 +261,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/cards", async (req, res) => {
     try {
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
       const validation = insertCardSchema.safeParse(req.body);
 
       if (!validation.success) {
@@ -177,10 +275,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           errors: validation.error.errors,
         });
       }
+      
+      // Verify the user owns the deck in which they want to add the card
+      const deckId = validation.data.deckId;
+      const deck = await storage.getDeck(deckId);
+      
+      if (!deck) {
+        return res.status(404).json({ message: "Deck not found" });
+      }
+      
+      if (deck.userId !== userId) {
+        return res.status(403).json({ message: "You don't have permission to add cards to this deck" });
+      }
 
       const newCard = await storage.createCard(validation.data);
       res.status(201).json(newCard);
     } catch (error) {
+      console.error("Error creating card:", error);
       res.status(500).json({ message: "Failed to create card" });
     }
   });
