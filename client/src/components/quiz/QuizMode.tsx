@@ -131,10 +131,17 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
 
   if (cards && cards.length === 0) {
     return (
-      <div className="text-center py-10">
+      <div className="text-center py-10 bg-white rounded-lg shadow border border-gray-200 p-8">
         <h2 className="text-xl font-bold mb-4">Quiz: {deck?.name}</h2>
-        <p className="text-gray-600 mb-6">No cards in this deck. Add some cards before starting a quiz!</p>
-        <Button onClick={() => navigate('/decks')}>Back to Decks</Button>
+        <p className="text-gray-600 mb-6">This deck doesn't have any cards yet. Add some cards before starting a quiz!</p>
+        <div className="flex justify-center gap-4">
+          <Button variant="outline" onClick={() => navigate('/decks')}>
+            Back to Decks
+          </Button>
+          <Button onClick={() => navigate('/search')}>
+            Add Cards
+          </Button>
+        </div>
       </div>
     );
   }
