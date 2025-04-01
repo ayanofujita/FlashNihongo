@@ -17,13 +17,12 @@ interface Deck {
 const StudyPage = () => {
   const { deckId } = useParams();
   
-  // Query decks with due cards information
+  // Only fetch decks with due cards if no specific deck is selected
   const { data: decks, isLoading, error } = useQuery<Deck[]>({
     queryKey: ["/api/decks/due"],
     queryFn: async () => {
       console.log("Fetching decks with due cards...");
       try {
-        // Add a random parameter to prevent caching
         const timestamp = new Date().getTime();
         const response = await fetch(`/api/decks/due?userId=1&t=${timestamp}`);
         
@@ -41,7 +40,7 @@ const StudyPage = () => {
         return [];
       }
     },
-    // Set a short stale time to refresh the data more frequently
+    enabled: !deckId, // Only run this query if no deckId is provided
     staleTime: 10000, // 10 seconds
   });
   
