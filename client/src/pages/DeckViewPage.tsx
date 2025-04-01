@@ -173,63 +173,72 @@ const DeckViewPage = () => {
                     {card.partOfSpeech}
                   </div>
                 )}
-                
-                <div className="flex justify-end mt-2 gap-2">
-                  {hasAdditionalDetails && (
-                    <button 
-                      className="text-blue-600 hover:text-blue-800 text-sm flex items-center"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCardClick(card);
-                      }}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Example
-                    </button>
-                  )}
-                  
-                  <button 
-                    className="text-gray-600 hover:text-blue-600 text-sm flex items-center"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditClick(card);
-                    }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Edit
-                  </button>
-                  
-                  <button 
-                    className="text-gray-600 hover:text-red-600 text-sm flex items-center"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteClick(card.id);
-                    }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    Delete
-                  </button>
-                </div>
               </div>
             );
 
             return (
               <div 
                 key={card.id}
-                className="relative"
-                onClick={() => hasAdditionalDetails ? handleCardClick(card) : null}
+                className="relative group"
               >
                 <Flashcard
                   front={card.front}
                   back={backContent}
-                  className="hover:ring-2 hover:ring-blue-200 transition-all duration-200"
+                  className="hover:ring-2 hover:ring-blue-200 rounded-xl transition-all duration-200"
                 />
+                
+                <div className="absolute top-3 right-3 flex space-x-1">
+                  {hasAdditionalDetails && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 rounded-full bg-white opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCardClick(card);
+                      }}
+                    >
+                      <span className="sr-only">View Example</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-blue-600">
+                        <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </Button>
+                  )}
+                  
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-full bg-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditClick(card);
+                    }}
+                  >
+                    <span className="sr-only">Edit</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-gray-600">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-full bg-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteClick(card.id);
+                    }}
+                  >
+                    <span className="sr-only">Delete</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-red-500">
+                      <path d="M3 6h18"></path>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      <line x1="10" y1="11" x2="10" y2="17"></line>
+                      <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                  </Button>
+                </div>
               </div>
             );
           })}
