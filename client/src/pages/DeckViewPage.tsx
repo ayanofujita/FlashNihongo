@@ -12,13 +12,15 @@ import {
   AlertDialogTitle 
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Trash2, Edit, ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import CardForm from "@/components/deck/CardForm";
+import Flashcard from "@/components/ui/flashcard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
+import CardDetailsModal from "@/components/deck/CardDetailsModal";
 
 interface Card {
   id: number;
@@ -47,6 +49,9 @@ const DeckViewPage = () => {
   const [cardToDelete, setCardToDelete] = useState<number | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [cardToEdit, setCardToEdit] = useState<Card | null>(null);
+  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const { data: deck, isLoading: isLoadingDeck } = useQuery<Deck>({
     queryKey: [`/api/decks/${deckId}`],
@@ -61,11 +66,18 @@ const DeckViewPage = () => {
   const handleDeleteClick = (id: number) => {
     setCardToDelete(id);
     setDeleteDialogOpen(true);
+    setDetailsModalOpen(false);
   };
 
   const handleEditClick = (card: Card) => {
     setCardToEdit(card);
     setEditDialogOpen(true);
+    setDetailsModalOpen(false);
+  };
+
+  const handleCardClick = (card: Card) => {
+    setSelectedCard(card);
+    setDetailsModalOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
@@ -99,90 +111,131 @@ const DeckViewPage = () => {
 
   return (
     <div>
-      <div className="flex items-center mb-6">
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => navigate("/decks")} 
+            className="mr-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" /> Back to Decks
+          </Button>
+          <h2 className="text-xl font-bold">
+            {isLoadingDeck ? (
+              <Skeleton className="h-7 w-48" />
+            ) : (
+              deck?.name || "Deck not found"
+            )}
+          </h2>
+        </div>
+        
+        {/* Add card button */}
         <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => navigate("/decks")} 
-          className="mr-4"
+          onClick={() => {
+            setCardToEdit(null);
+            setEditDialogOpen(true);
+          }}
+          className="bg-blue-600 hover:bg-blue-700"
+          size="sm"
         >
-          <ArrowLeft className="h-4 w-4 mr-1" /> Back to Decks
+          <Plus className="h-4 w-4 mr-1" /> Add Card
         </Button>
-        <h2 className="text-xl font-bold">
-          {isLoadingDeck ? (
-            <Skeleton className="h-7 w-48" />
-          ) : (
-            deck?.name || "Deck not found"
-          )}
-        </h2>
       </div>
 
       {isLoadingCards ? (
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <Card key={i} className="border border-gray-200">
-              <CardContent className="p-5">
-                <div className="flex justify-between items-start">
-                  <div className="w-full">
-                    <Skeleton className="h-6 w-1/3 mb-2" />
-                    <Skeleton className="h-4 w-1/2 mb-1" />
-                    <Skeleton className="h-4 w-full mt-3" />
-                  </div>
-                  <div className="flex space-x-2 ml-4">
-                    <Skeleton className="h-8 w-8 rounded-md" />
-                    <Skeleton className="h-8 w-8 rounded-md" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-80">
+              <Skeleton className="h-full w-full rounded-xl" />
+            </div>
           ))}
         </div>
       ) : cards && cards.length > 0 ? (
-        <div className="space-y-4">
-          {cards.map((card) => (
-            <Card key={card.id} className="border border-gray-200 hover:shadow-md transition">
-              <CardContent className="p-5">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="text-lg font-bold">{card.front}</div>
-                    {card.reading && (
-                      <div className="text-sm text-gray-600 mt-1">{card.reading}</div>
-                    )}
-                    <div className="mt-2">{card.back}</div>
-                    {card.partOfSpeech && (
-                      <div className="text-xs text-gray-500 mt-1">
-                        Part of speech: {card.partOfSpeech}
-                      </div>
-                    )}
-                    {card.example && (
-                      <div className="mt-3 text-sm">
-                        <div className="italic text-gray-600">{card.example}</div>
-                        {card.exampleTranslation && (
-                          <div className="text-gray-700">{card.exampleTranslation}</div>
-                        )}
-                      </div>
-                    )}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {cards.map((card) => {
+            // Generate simplified back content
+            const backContent = (
+              <div className="flex flex-col space-y-3">
+                <div className="text-xl font-medium">{card.back}</div>
+                
+                {card.reading && (
+                  <div className="text-base text-gray-600">
+                    {card.reading}
                   </div>
-                  <div className="flex space-x-2 ml-4">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEditClick(card)}
-                    >
-                      <Edit className="h-4 w-4 text-gray-400 hover:text-gray-600" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteClick(card.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
-                    </Button>
+                )}
+                
+                {card.partOfSpeech && (
+                  <div className="text-sm text-gray-500">
+                    {card.partOfSpeech}
                   </div>
+                )}
+                
+                {(card.example || card.exampleTranslation) && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-2 text-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCardClick(card);
+                    }}
+                  >
+                    View Details
+                  </Button>
+                )}
+              </div>
+            );
+
+            return (
+              <div 
+                key={card.id}
+                className="relative group"
+                onClick={() => handleCardClick(card)}
+              >
+                <Flashcard
+                  front={card.front}
+                  back={backContent}
+                  className="transition-shadow hover:shadow-md"
+                />
+
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-full bg-white"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditClick(card);
+                    }}
+                  >
+                    <span className="sr-only">Edit</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-gray-600">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-full bg-white"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteClick(card.id);
+                    }}
+                  >
+                    <span className="sr-only">Delete</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-red-500">
+                      <path d="M3 6h18"></path>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      <line x1="10" y1="11" x2="10" y2="17"></line>
+                      <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div className="text-center py-10">
@@ -198,6 +251,15 @@ const DeckViewPage = () => {
           </Button>
         </div>
       )}
+
+      {/* Card details modal */}
+      <CardDetailsModal
+        isOpen={detailsModalOpen}
+        onClose={() => setDetailsModalOpen(false)}
+        card={selectedCard}
+        onEdit={() => selectedCard && handleEditClick(selectedCard)}
+        onDelete={() => selectedCard && handleDeleteClick(selectedCard.id)}
+      />
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

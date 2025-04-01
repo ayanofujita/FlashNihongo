@@ -82,7 +82,7 @@ const Flashcard = ({
         >
           <div className="text-center w-full">
             <h3 className="text-gray-500 text-sm uppercase tracking-wide mb-4">Front</h3>
-            <div className="text-3xl sm:text-4xl font-medium text-gray-800 mb-6 break-words overflow-hidden">{front}</div>
+            <div className="text-3xl sm:text-4xl font-jp font-medium text-gray-800 mb-6 break-words overflow-hidden">{front}</div>
             <div className="text-gray-600 italic mt-4">Click to flip</div>
           </div>
         </div>
@@ -95,7 +95,7 @@ const Flashcard = ({
         >
           <div className="text-center w-full">
             <h3 className="text-gray-500 text-sm uppercase tracking-wide mb-4">Back</h3>
-            <div className="text-3xl sm:text-4xl font-medium text-gray-800 mb-6 break-words overflow-hidden">{back}</div>
+            <div className="text-2xl sm:text-3xl font-medium text-gray-800 mb-6 break-words overflow-hidden">{back}</div>
             <div className="text-gray-600 italic mt-4">Click to flip</div>
           </div>
         </div>
