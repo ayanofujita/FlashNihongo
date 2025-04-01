@@ -281,7 +281,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(progress);
     } catch (error) {
-      res.status(500).json({ message: "Failed to update study progress" });
+      console.error("Error updating study progress:", error);
+      res.status(500).json({ message: "Failed to update study progress", error: String(error) });
     }
   });
 

@@ -244,32 +244,38 @@ export class DatabaseStorage implements IStorage {
   ): Promise<StudyProgress> {
     const now = new Date();
     
-    // Check if progress already exists
-    const existingProgress = await this.getStudyProgress(userId, cardId);
-
-    if (existingProgress) {
-      // Update existing progress
-      const [updatedProgress] = await db
-        .update(studyProgress)
-        .set({ ...update, lastReviewed: now })
-        .where(
-          and(
-            eq(studyProgress.userId, userId),
-            eq(studyProgress.cardId, cardId)
+    try {
+      // Check if progress already exists
+      const existingProgress = await this.getStudyProgress(userId, cardId);
+  
+      if (existingProgress) {
+        // Update existing progress
+        const updateData = { 
+          ...update,
+          lastReviewed: now 
+        };
+        
+        console.log(`Updating existing progress with data:`, JSON.stringify(updateData));
+  
+        const [updatedProgress] = await db
+          .update(studyProgress)
+          .set(updateData)
+          .where(
+            and(
+              eq(studyProgress.userId, userId),
+              eq(studyProgress.cardId, cardId)
+            )
           )
-        )
-        .returning();
-      
-      console.log(
-        `Progress updated for card ${cardId}, next review: ${updatedProgress.nextReview?.toISOString()}`
-      );
-      
-      return updatedProgress;
-    } else {
-      // Create new progress
-      const [newProgress] = await db
-        .insert(studyProgress)
-        .values({
+          .returning();
+        
+        console.log(
+          `Progress updated for card ${cardId}, next review: ${updatedProgress.nextReview?.toISOString()}`
+        );
+        
+        return updatedProgress;
+      } else {
+        // Create new progress
+        const insertData = {
           cardId,
           userId,
           ease: update.ease || 250,
@@ -278,14 +284,24 @@ export class DatabaseStorage implements IStorage {
           lapses: update.lapses || 0,
           lastReviewed: now,
           nextReview: update.nextReview || now,
-        })
-        .returning();
-      
-      console.log(
-        `New progress created for card ${cardId}, next review: ${newProgress.nextReview?.toISOString()}`
-      );
-      
-      return newProgress;
+        };
+        
+        console.log(`Creating new progress with data:`, JSON.stringify(insertData));
+  
+        const [newProgress] = await db
+          .insert(studyProgress)
+          .values(insertData)
+          .returning();
+        
+        console.log(
+          `New progress created for card ${cardId}, next review: ${newProgress.nextReview?.toISOString()}`
+        );
+        
+        return newProgress;
+      }
+    } catch (error) {
+      console.error(`Error in updateStudyProgress for card ${cardId}, user ${userId}:`, error);
+      throw error;
     }
   }
 }
