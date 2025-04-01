@@ -43,24 +43,15 @@ const Flashcard = ({
             <div className="text-3xl sm:text-4xl font-medium text-gray-800 mb-6 break-words overflow-hidden">{front}</div>
             <div className="text-gray-600 italic mt-4">Click to flip</div>
           </div>
-          {cardNumber && totalCards && (
-            <div className="absolute bottom-3 right-4 text-xs text-gray-400">
-              {cardNumber} / {totalCards}
-            </div>
-          )}
         </div>
         
         {/* Card Back */}
         <div className="absolute inset-0 w-full h-full bg-white rounded-xl shadow-lg flex flex-col justify-center items-center p-8 border border-gray-200 rotate-y-180 overflow-auto" style={{ backfaceVisibility: "hidden" }}>
           <div className="text-center w-full">
             <h3 className="text-gray-500 text-sm uppercase tracking-wide mb-4">Back</h3>
-            <div className="break-words overflow-hidden">{back}</div>
+            <div className="text-3xl sm:text-4xl font-medium text-gray-800 mb-6 break-words overflow-hidden">{back}</div>
+            <div className="text-gray-600 italic mt-4">Click to flip</div>
           </div>
-          {cardNumber && totalCards && (
-            <div className="absolute bottom-3 right-4 text-xs text-gray-400">
-              {cardNumber} / {totalCards}
-            </div>
-          )}
         </div>
       </div>
 

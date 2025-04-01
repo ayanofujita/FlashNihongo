@@ -17,8 +17,7 @@ const StudyCard = ({
     <Flashcard
       front={front}
       back={back}
-      cardNumber={cardNumber}
-      totalCards={totalCards}
+      // Do not pass cardNumber and totalCards to avoid showing counter
     />
   );
 };

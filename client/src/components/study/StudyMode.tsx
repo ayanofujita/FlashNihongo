@@ -97,8 +97,14 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
         return hasChanges ? newUniqueIds : prevIds;
       });
       
+      // Filter out cards that have been already completed in this session
+      // to prevent them from showing up again immediately after being reviewed
+      const filteredDueCards = dueCards.filter(
+        card => !completed.includes(card.id)
+      );
+      
       // Check if we have new cards that weren't in our study session before
-      const newCards = dueCards.filter(
+      const newCards = filteredDueCards.filter(
         dueCard => !cardsToStudy.some(existingCard => existingCard.id === dueCard.id)
       );
       
@@ -108,18 +114,18 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
         setCardsToStudy(currentCards => [...currentCards, ...newCards]);
       } else if (cardsToStudy.length === 0) {
         // First load or reset
-        setCardsToStudy(dueCards);
+        setCardsToStudy(filteredDueCards);
       }
       
       // Only set the current card if we don't already have one
       // This prevents the current card from changing during API refresh
-      if (!currentCard && dueCards.length > 0) {
-        setCurrentCard(dueCards[0]);
+      if (!currentCard && filteredDueCards.length > 0) {
+        setCurrentCard(filteredDueCards[0]);
       }
     } else {
       console.log("No cards to study or dueCards is empty");
     }
-  }, [dueCards, currentCard, cardsToStudy]);
+  }, [dueCards, currentCard, cardsToStudy, completed]);
 
   const updateProgress = useMutation({
     mutationFn: async ({ 
@@ -367,8 +373,6 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
                     )}
                   </>
                 }
-                cardNumber={1}
-                totalCards={cardsToStudy.filter(card => !completed.includes(card.id)).length}
               />
             )}
 

@@ -216,6 +216,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/decks/due", async (req, res) => {
     try {
       const userId = parseInt(req.query.userId as string) || 1;
+      
+      if (req.query.deckId) {
+        // If a specific deck ID is requested
+        const deckId = parseInt(req.query.deckId as string);
+        const deck = await storage.getDeck(deckId);
+        
+        if (!deck) {
+          return res.status(404).json({ message: "Deck not found" });
+        }
+        
+        const dueCards = await storage.getCardsDueForReview(userId, [deckId]);
+        const deckWithDueInfo = {
+          ...deck,
+          hasDueCards: dueCards.length > 0,
+          dueCardCount: dueCards.length
+        };
+        
+        return res.json(deckWithDueInfo);
+      }
+      
+      // Get all decks if no deck ID specified
       const decks = await storage.getDecks();
       
       // For each deck, check if there are any due cards

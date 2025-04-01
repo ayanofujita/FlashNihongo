@@ -19,7 +19,7 @@ const QuizCard = ({
     if (!selectedOption) return "";
     
     if (option === correctAnswer) {
-      return "border-green-500 bg-green-50";
+      return "border-green-500 bg-green-50 font-semibold";
     }
     
     if (option === selectedOption && option !== correctAnswer) {
@@ -39,11 +39,11 @@ const QuizCard = ({
           {options.map((option, index) => (
             <button
               key={index}
-              className={`border border-gray-300 rounded-lg py-3 px-4 text-left hover:bg-gray-50 transition ${getOptionStyle(option)}`}
+              className={`border border-gray-300 rounded-lg py-3 px-4 text-left hover:bg-gray-50 transition break-words ${getOptionStyle(option)}`}
               onClick={() => onSelect(option)}
               disabled={selectedOption !== null}
             >
-              <span className="font-medium">{['A', 'B', 'C', 'D'][index]}.</span> {option}
+              <span className="font-medium">{['A', 'B', 'C', 'D'][index]}.</span> <span className="break-words">{option}</span>
             </button>
           ))}
         </div>
