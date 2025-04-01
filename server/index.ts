@@ -9,6 +9,38 @@ import { setupAuth } from "./auth";
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Add cache-busting headers
+app.use((req, res, next) => {
+  // Don't cache API responses, HTML pages, or service workers
+  if (
+    req.path.startsWith('/api') || 
+    req.path.endsWith('.html') || 
+    req.path === '/' || 
+    req.path.endsWith('sw.js') ||
+    req.path.includes('/auth/')
+  ) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Surrogate-Control', 'no-store');
+  } 
+  // For JavaScript files - short cache (1 hour)
+  else if (
+    req.path.endsWith('.js') || 
+    req.path.endsWith('.jsx') || 
+    req.path.endsWith('.ts') || 
+    req.path.endsWith('.tsx')
+  ) {
+    // Add a version query parameter to force cache refresh
+    res.setHeader('Cache-Control', 'public, max-age=3600'); // 1 hour
+  }
+  
+  // Add version timestamp header to all responses for debugging
+  res.setHeader('X-App-Version', new Date().toISOString());
+  next();
+});
+
 app.use(session({
   secret: process.env.SESSION_SECRET || 'keyboard cat',
   resave: false,

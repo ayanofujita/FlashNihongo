@@ -7,6 +7,11 @@
   <meta name="description" content="A Japanese learning flashcard application with spaced repetition and Jisho integration">
   <meta name="theme-color" content="#4338ca">
   
+  <!-- Cache-busting meta tags -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  
   <!-- PWA setup -->
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icon-192x192.png">
@@ -19,17 +24,48 @@
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
   
-  <!-- PWA registration -->
+  <!-- PWA registration with update handling -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
+        // Register the service worker
+        navigator.serviceWorker.register('/sw.js?v=' + new Date().getTime())
           .then(registration => {
             console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            
+            // Check for service worker updates at page load
+            registration.update();
+            
+            // Add a listener for updated service workers
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              
+              // Listen to state changes of the new worker
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // New version available, send skipWaiting message
+                  console.log('New version available! Updating service worker...');
+                  newWorker.postMessage({ type: 'SKIP_WAITING' });
+                  
+                  // Reload the page to ensure the new version is used
+                  window.location.reload();
+                }
+              });
+            });
           })
           .catch(error => {
             console.log('ServiceWorker registration failed: ', error);
           });
+          
+        // Handle case when an updated worker becomes activated
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!refreshing) {
+            refreshing = true;
+            console.log('Controller changed, refreshing page...');
+            window.location.reload();
+          }
+        });
       });
     }
   </script>

@@ -2,6 +2,8 @@ import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/hooks/use-toast";
+import { useEffect, useState } from "react";
 import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/Sidebar";
 import MobileNavBar from "@/components/MobileNavBar";
@@ -14,6 +16,61 @@ import SearchPage from "@/pages/SearchPage";
 import DeckViewPage from "@/pages/DeckViewPage";
 import ProfilePage from "@/pages/ProfilePage";
 import { UserProvider } from "@/components/auth/UserContext";
+
+// Update Notification Component
+function UpdateNotification() {
+  const { toast } = useToast();
+  const [newVersionAvailable, setNewVersionAvailable] = useState(false);
+
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      // Check if there's a new version at an interval
+      const checkForUpdates = () => {
+        navigator.serviceWorker.getRegistration().then(registration => {
+          if (registration) {
+            registration.update()
+              .then(() => {
+                if (registration.waiting) {
+                  // There's a new version waiting
+                  setNewVersionAvailable(true);
+                  
+                  toast({
+                    title: "New version available!",
+                    description: "Refresh to update to the latest version.",
+                    action: (
+                      <button 
+                        className="rounded bg-primary text-primary-foreground px-3 py-1 text-xs"
+                        onClick={() => {
+                          if (registration.waiting) {
+                            // Send message to service worker to skip waiting
+                            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                          }
+                          window.location.reload();
+                        }}
+                      >
+                        Update Now
+                      </button>
+                    ),
+                    duration: 0, // Don't auto-dismiss
+                  });
+                }
+              });
+          }
+        });
+      };
+      
+      // Check for updates on page load
+      checkForUpdates();
+      
+      // And then check periodically
+      const interval = setInterval(checkForUpdates, 60 * 1000); // Check every minute
+      
+      return () => clearInterval(interval);
+    }
+  }, [toast]);
+  
+  return null; // This component doesn't render anything visible
+}
 
 function Router() {
   return (
@@ -50,6 +107,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <UserProvider>
         <Router />
+        <UpdateNotification />
         <Toaster />
       </UserProvider>
     </QueryClientProvider>
