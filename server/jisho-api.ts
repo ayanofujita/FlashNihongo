@@ -1,5 +1,4 @@
 import { DictionaryResult, dictionaryResultSchema } from "@shared/schema";
-import { z } from "zod";
 
 const JISHO_API_URL = "https://jisho.org/api/v1/search/words";
 
