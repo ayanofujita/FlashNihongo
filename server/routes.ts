@@ -212,6 +212,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get decks with due cards
+  app.get("/api/decks/due", async (req, res) => {
+    try {
+      const userId = parseInt(req.query.userId as string) || 1;
+      const decks = await storage.getDecks();
+      
+      // For each deck, check if there are any due cards
+      const decksWithDueInfo = await Promise.all(
+        decks.map(async (deck) => {
+          const dueCards = await storage.getCardsDueForReview(userId, [deck.id]);
+          return {
+            ...deck,
+            hasDueCards: dueCards.length > 0,
+            dueCardCount: dueCards.length
+          };
+        })
+      );
+      
+      // Only return decks with due cards if filter=true is specified
+      if (req.query.filter === 'true') {
+        const filtered = decksWithDueInfo.filter(deck => deck.hasDueCards);
+        return res.json(filtered);
+      }
+      
+      res.json(decksWithDueInfo);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch decks with due info" });
+    }
+  });
+
   // Dictionary search routes
   app.get("/api/dictionary/search", async (req, res) => {
     try {

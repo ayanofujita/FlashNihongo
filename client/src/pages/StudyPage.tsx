@@ -2,27 +2,31 @@ import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import StudyMode from "@/components/study/StudyMode";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BookOpen } from "lucide-react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 
 interface Deck {
   id: number;
   name: string;
+  hasDueCards: boolean;
+  dueCardCount: number;
 }
 
 const StudyPage = () => {
   const { deckId } = useParams();
   
+  // Query decks with due cards information
   const { data: decks, isLoading } = useQuery<Deck[]>({
-    queryKey: ["/api/decks"],
+    queryKey: ["/api/decks/due"],
   });
   
   // If no deck ID is provided, show a deck selection screen
   if (!deckId) {
     return (
       <div>
-        <h2 className="text-xl font-bold mb-6">Select a Deck to Study</h2>
+        <h2 className="text-2xl font-bold mb-6">Study Flashcards</h2>
         
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -34,23 +38,35 @@ const StudyPage = () => {
           <>
             {decks && decks.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {decks.map((deck) => (
+                {decks.filter(deck => deck.hasDueCards).map((deck) => (
                   <Link key={deck.id} href={`/study/${deck.id}`}>
                     <a className="block bg-white rounded-lg shadow p-6 border border-gray-200 hover:shadow-md transition">
-                      <h3 className="text-lg font-bold mb-2">{deck.name}</h3>
-                      <Button className="mt-2 w-full bg-blue-600 hover:bg-blue-700">
-                        Study This Deck
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="text-lg font-bold">{deck.name}</h3>
+                        <Badge variant="outline" className="bg-blue-50">
+                          {deck.dueCardCount} {deck.dueCardCount === 1 ? 'card' : 'cards'} due
+                        </Badge>
+                      </div>
+                      <Button className="mt-4 w-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center gap-2">
+                        <BookOpen size={16} />
+                        <span>Study Now</span>
                       </Button>
                     </a>
                   </Link>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-10">
-                <p className="text-gray-600 mb-4">You don't have any decks yet. Create a deck first to start studying.</p>
-                <Button asChild>
-                  <Link href="/decks">Go to Decks</Link>
-                </Button>
+              <div className="text-center py-10 bg-white rounded-lg shadow p-8">
+                <h3 className="text-xl font-semibold mb-3">No Cards Due for Review</h3>
+                <p className="text-gray-600 mb-6">You're all caught up! There are no cards due for review right now.</p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Button asChild variant="outline">
+                    <Link href="/decks">Manage Decks</Link>
+                  </Button>
+                  <Button asChild>
+                    <Link href="/search">Add New Cards</Link>
+                  </Button>
+                </div>
               </div>
             )}
           </>

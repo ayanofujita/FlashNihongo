@@ -65,13 +65,15 @@ const AddToDeckModal = ({ isOpen, onClose, word }: AddToDeckModalProps) => {
     onSuccess: (_responseData, variables) => {
       toast({
         title: "Card added",
-        description: "The card has been added to your deck.",
+        description: "The card has been added to your deck and is now available for study.",
       });
       onClose();
       // Invalidate relevant queries to update card counts
       queryClient.invalidateQueries({ queryKey: ["/api/decks"] });
       queryClient.invalidateQueries({ queryKey: ["/api/cardCounts"] });
       queryClient.invalidateQueries({ queryKey: [`/api/decks/${variables.deckId}/cards`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/study/due"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/decks/due"] });
     },
     onError: () => {
       toast({
