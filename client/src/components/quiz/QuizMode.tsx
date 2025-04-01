@@ -91,6 +91,8 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
   };
 
   const handleNext = () => {
+    if (isQuizFinished) return;
+    
     if (currentQuestionIndex < quizCards.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setSelectedOption(null);
@@ -104,6 +106,8 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
   };
 
   const handlePrevious = () => {
+    if (isQuizFinished) return;
+    
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
       setSelectedOption(answers[currentQuestionIndex - 1] || null);
@@ -163,12 +167,19 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
       <div className="mb-6 flex justify-between items-center">
         <div>
           <h2 className="text-xl font-bold">Quiz: {deck?.name}</h2>
-          <p className="text-gray-600 text-sm mt-1">Test your knowledge with a randomized quiz</p>
+          <p className="text-gray-600 text-sm mt-1">
+            {isQuizFinished 
+              ? "Quiz completed. View your results below." 
+              : "Test your knowledge with a randomized quiz"
+            }
+          </p>
         </div>
         <div className="flex space-x-4">
-          <Button variant="outline" className="flex items-center">
-            <Settings className="mr-1 h-4 w-4" /> Options
-          </Button>
+          {!isQuizFinished && (
+            <Button variant="outline" className="flex items-center">
+              <Settings className="mr-1 h-4 w-4" /> Options
+            </Button>
+          )}
           <Button variant="outline" className="flex items-center" onClick={() => navigate('/decks')}>
             <X className="mr-1 h-4 w-4" /> Exit
           </Button>
@@ -178,10 +189,10 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
       <Progress value={progress} className="w-full h-2.5 mb-6" />
       <div className="flex justify-between text-sm text-gray-600 mb-6">
         <span>Question {currentQuestionIndex + 1} of {quizCards.length}</span>
-        <span>Score: {score}/{currentQuestionIndex}</span>
+        <span>Score: {score}/{isQuizFinished ? quizCards.length : currentQuestionIndex}</span>
       </div>
 
-      <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-200 mb-6">
+      <div className={`bg-white rounded-xl shadow-lg p-8 border border-gray-200 mb-6 ${isQuizFinished ? "opacity-50" : ""}`}>
         <h3 className="text-lg text-gray-600 mb-4">What is the meaning of:</h3>
         <div className="text-5xl font-jp font-medium text-center mb-6">{currentCard.front}</div>
 
@@ -200,7 +211,7 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
                   : ""
               }`}
               onClick={() => handleOptionSelect(option)}
-              disabled={selectedOption !== null}
+              disabled={selectedOption !== null || isQuizFinished}
             >
               <span className="font-medium mr-2">{['A', 'B', 'C', 'D'][index]}.</span> {option}
             </Button>
@@ -208,24 +219,26 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
         </div>
       </div>
 
-      <div className="flex justify-between">
-        <Button 
-          variant="outline" 
-          className="flex items-center"
-          onClick={handlePrevious}
-          disabled={currentQuestionIndex === 0}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" /> Previous
-        </Button>
-        <Button 
-          className="bg-violet-600 hover:bg-violet-700 flex items-center"
-          onClick={handleNext}
-          disabled={!selectedOption && !isQuizFinished}
-        >
-          {currentQuestionIndex < quizCards.length - 1 ? "Next" : "Finish"}
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
+      {!isQuizFinished && (
+        <div className="flex justify-between">
+          <Button 
+            variant="outline" 
+            className="flex items-center"
+            onClick={handlePrevious}
+            disabled={currentQuestionIndex === 0}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" /> Previous
+          </Button>
+          <Button 
+            className="bg-violet-600 hover:bg-violet-700 flex items-center"
+            onClick={handleNext}
+            disabled={!selectedOption}
+          >
+            {currentQuestionIndex < quizCards.length - 1 ? "Next" : "Finish"}
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      )}
 
       {isQuizFinished && (
         <div className="mt-8 p-6 bg-white rounded-lg shadow border border-gray-200">
@@ -233,7 +246,17 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
           <p className="text-2xl font-bold text-center mb-6">
             {score}/{quizCards.length} ({Math.round((score / quizCards.length) * 100)}%)
           </p>
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-4">
+            <Button variant="outline" onClick={() => {
+              // Reset the quiz to start over
+              setCurrentQuestionIndex(0);
+              setSelectedOption(null);
+              setAnswers({});
+              setScore(0);
+              setIsQuizFinished(false);
+            }}>
+              Try Again
+            </Button>
             <Button onClick={() => navigate('/decks')}>Back to Decks</Button>
           </div>
         </div>
