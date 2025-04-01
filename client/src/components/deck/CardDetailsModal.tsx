@@ -39,16 +39,8 @@ const CardDetailsModal = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
+          <DialogTitle>
             <span className="text-xl">Example for <span className="font-jp">{card.front}</span></span>
-            <Button
-              variant="ghost" 
-              size="icon" 
-              onClick={onClose} 
-              className="h-6 w-6 rounded-full absolute right-4 top-4"
-            >
-              <X className="h-4 w-4" />
-            </Button>
           </DialogTitle>
         </DialogHeader>
 
