@@ -1,6 +1,6 @@
 // Service Worker for FlashNihongo PWA
 
-const CACHE_NAME = 'flashnihongo-cache-v2'; // Updated cache version
+const CACHE_NAME = 'flashnihongo-cache-v3'; // Updated cache version
 const urlsToCache = [
   '/',
   '/index.html',
