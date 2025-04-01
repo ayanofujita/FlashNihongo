@@ -16,18 +16,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get decks with due cards - either all decks or a specific deck
   app.get("/api/decks/due", async (req, res) => {
     try {
       const userId = parseInt(req.query.userId as string) || 1;
-      let deckId: number | undefined = undefined;
-
-      // Check if a deckId was specified in the query
-      if (req.query.deckId && typeof req.query.deckId === "string") {
-        deckId = parseInt(req.query.deckId);
-        console.log(`Looking for specific deck with ID: ${deckId}`);
-      }
-
       const decks = await storage.getDecks();
 
       if (!decks || decks.length === 0) {
@@ -35,47 +26,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json([]);
       }
 
-      // If a specific deck ID is requested
-      if (deckId !== undefined) {
-        const deck = decks.find((d) => d.id === deckId);
-
-        if (!deck) {
-          console.log(`Deck with ID ${deckId} not found`);
-          return res.json([]); // Return empty array instead of 404
-        }
-
-        const dueCards = await storage.getCardsDueForReview(userId, [deckId]);
-        const deckWithDueInfo = {
-          ...deck,
-          hasDueCards: dueCards.length > 0,
-          dueCardCount: dueCards.length,
-        };
-
-        console.log(
-          `Returning info for deck ${deckId}: ${deck.name} - Due cards: ${dueCards.length}`,
-        );
-        return res.json(deckWithDueInfo);
-      }
-
       console.log("Fetching due info for all decks...");
-
-      // Get all decks with due info
+      
       const decksWithDueInfo = await Promise.all(
         decks.map(async (deck) => {
-          const cards = await storage.getCards(deck.id);
-
-          // Skip decks with no cards
-          if (!cards || cards.length === 0) {
-            return {
-              ...deck,
-              hasDueCards: false,
-              dueCardCount: 0,
-            };
-          }
-
-          const dueCards = await storage.getCardsDueForReview(userId, [
-            deck.id,
-          ]);
+          const dueCards = await storage.getCardsDueForReview(userId, [deck.id]);
           return {
             ...deck,
             hasDueCards: dueCards.length > 0,
@@ -86,23 +41,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Only return decks with due cards if filter=true is specified
       if (req.query.filter === "true") {
-        const filteredDecks = decksWithDueInfo.filter(
-          (deck) => deck.hasDueCards,
-        );
-        console.log(
-          `Returning ${filteredDecks.length} decks with due cards (filtered)`,
-        );
+        const filteredDecks = decksWithDueInfo.filter(deck => deck.hasDueCards);
+        console.log(`Returning ${filteredDecks.length} decks with due cards (filtered)`);
         return res.json(filteredDecks);
       }
 
-      // Log the number of decks and their due status
       console.log(`Returning ${decksWithDueInfo.length} decks with due info`);
-      decksWithDueInfo.forEach((deck) => {
-        console.log(
-          `Deck ${deck.id}: ${deck.name} - Due cards: ${deck.dueCardCount}, hasDueCards: ${deck.hasDueCards}`,
-        );
-      });
-
       return res.json(decksWithDueInfo);
     } catch (error) {
       console.error("Error fetching due decks:", error);
