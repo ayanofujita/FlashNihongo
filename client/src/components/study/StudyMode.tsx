@@ -346,12 +346,12 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
 
   return (
     <div>
-      <div className="mb-6 flex justify-between items-center">
+      <div className="mb-6 flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
           <h2 className="text-xl font-bold">Study: {deck?.name}</h2>
           <p className="text-gray-600 text-sm mt-1">Spaced repetition system - focus on cards you need to review</p>
         </div>
-        <div className="flex space-x-4">
+        <div className="flex space-x-2 md:space-x-4">
           <Button variant="outline" className="flex items-center">
             <Settings className="mr-1 h-4 w-4" /> Options
           </Button>
