@@ -286,8 +286,8 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
         return `${hours}h`;
       }
       
-      // Otherwise show in days
-      const days = Math.round(interval);
+      // Otherwise show in days, only round if not a whole number
+      const days = Number.isInteger(interval) ? interval : Number(interval.toFixed(1));
       return `${days}d`;
     };
     
