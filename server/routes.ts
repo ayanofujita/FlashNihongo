@@ -234,22 +234,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get decks with due cards
+  // Get decks with due cards - either all decks or a specific deck
   app.get("/api/decks/due", async (req, res) => {
     try {
       const userId = parseInt(req.query.userId as string) || 1;
+      let deckId: number | undefined = undefined;
+      
+      // Check if a deckId was specified in the query
+      if (req.query.deckId && typeof req.query.deckId === 'string') {
+        deckId = parseInt(req.query.deckId);
+        console.log(`Looking for specific deck with ID: ${deckId}`);
+      }
+      
       const decks = await storage.getDecks();
       
       if (!decks || decks.length === 0) {
+        console.log("No decks found.");
         return res.json([]);
       }
 
       // If a specific deck ID is requested
-      if (req.query.deckId) {
-        const deckId = parseInt(req.query.deckId as string);
+      if (deckId !== undefined) {
         const deck = decks.find(d => d.id === deckId);
         
         if (!deck) {
+          console.log(`Deck with ID ${deckId} not found`);
           return res.json([]); // Return empty array instead of 404
         }
         
@@ -260,8 +269,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           dueCardCount: dueCards.length
         };
         
+        console.log(`Returning info for deck ${deckId}: ${deck.name} - Due cards: ${dueCards.length}`);
         return res.json(deckWithDueInfo);
       }
+      
+      console.log("Fetching due info for all decks...");
       
       // Get all decks with due info
       const decksWithDueInfo = await Promise.all(
@@ -288,7 +300,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Only return decks with due cards if filter=true is specified
       if (req.query.filter === 'true') {
-        return res.json(decksWithDueInfo.filter(deck => deck.hasDueCards));
+        const filteredDecks = decksWithDueInfo.filter(deck => deck.hasDueCards);
+        console.log(`Returning ${filteredDecks.length} decks with due cards (filtered)`);
+        return res.json(filteredDecks);
       }
       
       // Log the number of decks and their due status

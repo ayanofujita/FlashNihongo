@@ -22,18 +22,27 @@ const StudyPage = () => {
     queryKey: ["/api/decks/due"],
     queryFn: async () => {
       console.log("Fetching decks with due cards...");
-      const response = await fetch("/api/decks/due?userId=1");
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Failed to fetch decks with due cards: ${response.status} ${response.statusText}`, errorText);
+      try {
+        // Add a random parameter to prevent caching
+        const timestamp = new Date().getTime();
+        const response = await fetch(`/api/decks/due?userId=1&t=${timestamp}`);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Failed to fetch decks with due cards: ${response.status} ${response.statusText}`, errorText);
+          return [];
+        }
+        
+        const data = await response.json();
+        console.log("Received decks with due info:", data);
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.error("Error fetching decks with due cards:", error);
         return [];
       }
-      
-      const data = await response.json();
-      console.log("Received decks with due info:", data);
-      return data;
-    }
+    },
+    // Set a short stale time to refresh the data more frequently
+    staleTime: 10000, // 10 seconds
   });
   
   // If no deck ID is provided, show a deck selection screen
@@ -72,7 +81,14 @@ const StudyPage = () => {
             ) : (
               <div className="text-center py-10 bg-white rounded-lg shadow p-8">
                 <h3 className="text-xl font-semibold mb-3">No Cards Due for Review</h3>
-                <p className="text-gray-600 mb-6">You're all caught up! There are no cards due for review right now.</p>
+                <p className="text-gray-600 mb-6">
+                  {error 
+                    ? "There was an error fetching your due cards. Please try again later."
+                    : decks && decks.length > 0 
+                      ? "You have decks, but none have cards due for review right now."
+                      : "You're all caught up! There are no cards due for review right now."
+                  }
+                </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button asChild variant="outline">
                     <Link href="/decks">Manage Decks</Link>
