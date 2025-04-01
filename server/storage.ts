@@ -11,6 +11,9 @@ import {
   studyProgress,
   type StudyProgress,
   type InsertStudyProgress,
+  userStats,
+  type UserStats,
+  type InsertUserStats,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, inArray, desc, sql } from "drizzle-orm";
@@ -22,6 +25,13 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
 
+  // User Stats operations
+  getUserStats(userId: number): Promise<UserStats | undefined>;
+  createUserStats(stats: InsertUserStats): Promise<UserStats>;
+  updateUserStats(userId: number, stats: Partial<InsertUserStats>): Promise<UserStats | undefined>;
+  updateStreak(userId: number): Promise<UserStats | undefined>;
+  incrementReviewStats(userId: number, correct: boolean): Promise<UserStats | undefined>;
+  
   // Deck operations
   getDecks(): Promise<Deck[]>;
   getDecksByUserId(userId: number): Promise<Deck[]>;
@@ -65,7 +75,125 @@ export class DatabaseStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
+    
+    // Create initial user stats for the new user
+    await this.createUserStats({
+      userId: user.id,
+      totalReviews: 0,
+      totalCorrect: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+      lastStudyDate: null,
+      cardsLearned: 0,
+      studyTime: 0,
+    });
+    
     return user;
+  }
+
+  // User Stats operations
+  async getUserStats(userId: number): Promise<UserStats | undefined> {
+    const [stats] = await db.select().from(userStats).where(eq(userStats.userId, userId));
+    return stats;
+  }
+
+  async createUserStats(stats: InsertUserStats): Promise<UserStats> {
+    const [newStats] = await db.insert(userStats).values(stats).returning();
+    return newStats;
+  }
+
+  async updateUserStats(
+    userId: number,
+    statsUpdate: Partial<InsertUserStats>
+  ): Promise<UserStats | undefined> {
+    const [updatedStats] = await db
+      .update(userStats)
+      .set(statsUpdate)
+      .where(eq(userStats.userId, userId))
+      .returning();
+    return updatedStats;
+  }
+
+  async updateStreak(userId: number): Promise<UserStats | undefined> {
+    // Get current user stats
+    const stats = await this.getUserStats(userId);
+    if (!stats) {
+      // Create new stats if none exist
+      return await this.createUserStats({
+        userId,
+        totalReviews: 0,
+        totalCorrect: 0,
+        currentStreak: 1,
+        longestStreak: 1,
+        lastStudyDate: new Date().toISOString().split('T')[0],
+        cardsLearned: 0,
+        studyTime: 0,
+      });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Start of today
+    
+    const lastStudyDate = stats.lastStudyDate ? new Date(stats.lastStudyDate) : null;
+    if (lastStudyDate) {
+      lastStudyDate.setHours(0, 0, 0, 0); // Start of last study date
+    }
+
+    let currentStreak = stats.currentStreak || 0;
+    let longestStreak = stats.longestStreak || 0;
+
+    // If never studied before or last study was not yesterday or today
+    if (!lastStudyDate) {
+      // First study ever, start streak at 1
+      currentStreak = 1;
+    } else if (lastStudyDate.getTime() === today.getTime()) {
+      // Already studied today, don't change streak
+    } else {
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      if (lastStudyDate.getTime() === yesterday.getTime()) {
+        // Studied yesterday, increment streak
+        currentStreak += 1;
+      } else {
+        // Streak broken, start new streak
+        currentStreak = 1;
+      }
+    }
+
+    // Update longest streak if needed
+    if (currentStreak > longestStreak) {
+      longestStreak = currentStreak;
+    }
+
+    // Update stats with new streak info
+    return await this.updateUserStats(userId, {
+      currentStreak,
+      longestStreak,
+      lastStudyDate: today.toISOString().split('T')[0],
+    });
+  }
+
+  async incrementReviewStats(userId: number, correct: boolean): Promise<UserStats | undefined> {
+    const stats = await this.getUserStats(userId);
+    if (!stats) {
+      // Create new stats if none exist
+      return await this.createUserStats({
+        userId,
+        totalReviews: 1,
+        totalCorrect: correct ? 1 : 0,
+        currentStreak: 0,
+        longestStreak: 0,
+        lastStudyDate: null,
+        cardsLearned: 0,
+        studyTime: 0,
+      });
+    }
+
+    return await this.updateUserStats(userId, {
+      totalReviews: (stats.totalReviews || 0) + 1,
+      totalCorrect: (stats.totalCorrect || 0) + (correct ? 1 : 0),
+    });
   }
 
   // Deck operations

@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, numeric, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -15,6 +15,33 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+// User Stats schema
+export const userStats = pgTable("user_stats", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull().unique(),
+  totalReviews: integer("total_reviews").default(0),
+  totalCorrect: integer("total_correct").default(0),
+  currentStreak: integer("current_streak").default(0),
+  longestStreak: integer("longest_streak").default(0),
+  lastStudyDate: date("last_study_date"),
+  cardsLearned: integer("cards_learned").default(0),
+  studyTime: integer("study_time_minutes").default(0), // Total time spent studying in minutes
+});
+
+export const insertUserStatsSchema = createInsertSchema(userStats).pick({
+  userId: true,
+  totalReviews: true,
+  totalCorrect: true,
+  currentStreak: true,
+  longestStreak: true,
+  lastStudyDate: true,
+  cardsLearned: true,
+  studyTime: true,
+});
+
+export type InsertUserStats = z.infer<typeof insertUserStatsSchema>;
+export type UserStats = typeof userStats.$inferSelect;
 
 // Deck schema
 export const decks = pgTable("decks", {

@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { searchWord } from "./jisho-api";
-import { insertDeckSchema, insertCardSchema } from "@shared/schema";
+import { insertDeckSchema, insertCardSchema, insertUserStatsSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -299,6 +299,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(results);
     } catch (error) {
       res.status(500).json({ message: "Failed to search dictionary" });
+    }
+  });
+
+  // User Stats routes
+  app.get("/api/user-stats/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Valid user ID is required" });
+      }
+
+      const stats = await storage.getUserStats(userId);
+      
+      if (!stats) {
+        return res.status(404).json({ message: "User stats not found" });
+      }
+      
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching user stats:", error);
+      res.status(500).json({ message: "Failed to fetch user stats" });
+    }
+  });
+
+  app.post("/api/user-stats/update-streak/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Valid user ID is required" });
+      }
+
+      const updatedStats = await storage.updateStreak(userId);
+      res.json(updatedStats);
+    } catch (error) {
+      console.error("Error updating streak:", error);
+      res.status(500).json({ message: "Failed to update streak" });
+    }
+  });
+
+  app.post("/api/user-stats/increment-review/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const { correct } = req.body;
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Valid user ID is required" });
+      }
+
+      if (typeof correct !== 'boolean') {
+        return res.status(400).json({ message: "'correct' boolean is required" });
+      }
+
+      const updatedStats = await storage.incrementReviewStats(userId, correct);
+      res.json(updatedStats);
+    } catch (error) {
+      console.error("Error incrementing review stats:", error);
+      res.status(500).json({ message: "Failed to increment review stats" });
+    }
+  });
+
+  app.put("/api/user-stats/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Valid user ID is required" });
+      }
+
+      const validation = insertUserStatsSchema.partial().safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({
+          message: "Invalid stats data",
+          errors: validation.error.errors,
+        });
+      }
+
+      const updatedStats = await storage.updateUserStats(userId, validation.data);
+      
+      if (!updatedStats) {
+        return res.status(404).json({ message: "User stats not found" });
+      }
+      
+      res.json(updatedStats);
+    } catch (error) {
+      console.error("Error updating user stats:", error);
+      res.status(500).json({ message: "Failed to update user stats" });
     }
   });
 

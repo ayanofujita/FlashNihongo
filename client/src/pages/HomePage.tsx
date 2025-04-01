@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import UserStats from "@/components/UserStats";
 
 const HomePage = () => {
   return (
@@ -17,6 +18,11 @@ const HomePage = () => {
             <Link href="/search">Search Dictionary</Link>
           </Button>
         </div>
+      </div>
+      
+      {/* User Stats Section */}
+      <div className="max-w-5xl mx-auto mb-12">
+        <UserStats userId={1} />
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-12">

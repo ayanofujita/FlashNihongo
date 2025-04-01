@@ -128,6 +128,37 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     }
   }, [dueCards, currentCard, cardsToStudy, completed]);
 
+  // Mutation to update user streak
+  const updateStreakMutation = useMutation({
+    mutationFn: async () => {
+      const userId = 1; // Default user for this example
+      await apiRequest("POST", `/api/user-stats/update-streak/${userId}`);
+    },
+    onSuccess: () => {
+      // Invalidate user stats queries
+      queryClient.invalidateQueries({ queryKey: ['/api/user-stats'] });
+    },
+    onError: (error) => {
+      console.error("Failed to update streak:", error);
+    }
+  });
+
+  // Mutation to increment review stats
+  const incrementReviewStatsMutation = useMutation({
+    mutationFn: async (correct: boolean) => {
+      const userId = 1; // Default user for this example
+      await apiRequest("POST", `/api/user-stats/increment-review/${userId}`, { correct });
+    },
+    onSuccess: () => {
+      // Invalidate user stats queries
+      queryClient.invalidateQueries({ queryKey: ['/api/user-stats'] });
+    },
+    onError: (error) => {
+      console.error("Failed to increment review stats:", error);
+    }
+  });
+  
+  // Mutation to update study progress
   const updateProgress = useMutation({
     mutationFn: async ({ 
       cardId, 
@@ -241,8 +272,25 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     }
     
     try {
+      const userId = 1; // Default user
+      
       // Update the progress in the backend
       await updateProgress.mutateAsync({ cardId: currentCard.id, rating });
+      
+      // Update user stats based on rating
+      if (rating === 'again') {
+        // Incorrect answer
+        incrementReviewStatsMutation.mutate(false);
+      } else {
+        // Correct answer
+        incrementReviewStatsMutation.mutate(true);
+      }
+      
+      // Update streak since user has studied today
+      if (completed.length === 0) {
+        // Only update streak once per study session (when completing first card)
+        updateStreakMutation.mutate();
+      }
       
       // Mark the card as completed regardless of rating
       // We'll respect the calculated interval for all ratings
