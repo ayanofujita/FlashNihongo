@@ -6,6 +6,7 @@ interface QuizCardProps {
   onSelect: (option: string) => void;
   selectedOption: string | null;
   correctAnswer: string;
+  quizType: "meaning" | "reading";
 }
 
 const QuizCard = ({
@@ -14,6 +15,7 @@ const QuizCard = ({
   onSelect,
   selectedOption,
   correctAnswer,
+  quizType,
 }: QuizCardProps) => {
   const getOptionStyle = (option: string) => {
     if (!selectedOption) return "";
@@ -32,10 +34,19 @@ const QuizCard = ({
     return "opacity-60";
   };
 
+  // Get the appropriate prompt based on quiz type
+  const getPrompt = () => {
+    if (quizType === "meaning") {
+      return "What is the meaning of:";
+    } else {
+      return "What is the reading of:";
+    }
+  };
+
   return (
     <Card className="rounded-xl shadow-lg border border-gray-200">
       <CardContent className="p-8">
-        <h3 className="text-lg text-gray-600 mb-4">What is the meaning of:</h3>
+        <h3 className="text-lg text-gray-600 mb-4">{getPrompt()}</h3>
         <div className="text-5xl font-jp font-medium text-center mb-6">
           {question}
         </div>
