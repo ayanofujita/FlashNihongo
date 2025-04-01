@@ -45,7 +45,7 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
   const { data: cards, isLoading: isCardsLoading } = useQuery<Card[]>({
     queryKey: [`/api/decks/${deckId}/cards`],
   });
-  
+
   // Process cards when they load
   useEffect(() => {
     if (cards && cards.length > 0) {
@@ -53,7 +53,7 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
       const shuffled = [...cards].sort(() => 0.5 - Math.random());
       const selected = shuffled.slice(0, Math.min(20, shuffled.length));
       setQuizCards(selected);
-      
+
       // Generate options for each question (3 incorrect + 1 correct)
       const allOptions = selected.map((card) => {
         // Get 3 random cards different from the current one to use as distractors
@@ -62,28 +62,28 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
           .sort(() => 0.5 - Math.random())
           .slice(0, 3)
           .map((c: Card) => c.back);
-        
+
         // Add the correct answer and shuffle
         const allAnswers = [...distractors, card.back].sort(() => 0.5 - Math.random());
         return allAnswers;
       });
-      
+
       setOptions(allOptions);
     }
   }, [cards]);
 
   const handleOptionSelect = (option: string) => {
     if (isQuizFinished) return;
-    
+
     setSelectedOption(option);
     const currentCard = quizCards[currentQuestionIndex];
-    
+
     // Save the selected answer
     setAnswers({
       ...answers,
       [currentQuestionIndex]: option
     });
-    
+
     // Check if answer is correct
     if (option === currentCard.back) {
       setScore(score + 1);
@@ -153,7 +153,7 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
       </div>
     );
   }
-  
+
   const currentCard = quizCards[currentQuestionIndex];
   const currentOptions = options[currentQuestionIndex] || [];
   const progress = ((currentQuestionIndex + 1) / quizCards.length) * 100;
@@ -184,18 +184,20 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
       <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-200 mb-6">
         <h3 className="text-lg text-gray-600 mb-4">What is the meaning of:</h3>
         <div className="text-5xl font-jp font-medium text-center mb-6">{currentCard.front}</div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
           {currentOptions.map((option, index) => (
             <Button
               key={index}
               variant="outline"
               className={`flex justify-start h-auto py-3 px-4 text-left ${
-                option === currentCard.back
-                  ? "border-green-500 bg-green-50"
-                  : selectedOption === option
-                    ? "border-red-500 bg-red-50"
-                    : ""
+                selectedOption
+                  ? option === currentCard.back
+                    ? "border-green-500 bg-green-50"
+                    : selectedOption === option
+                      ? "border-red-500 bg-red-50"
+                      : ""
+                  : ""
               }`}
               onClick={() => handleOptionSelect(option)}
               disabled={selectedOption !== null}
@@ -205,7 +207,7 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
           ))}
         </div>
       </div>
-      
+
       <div className="flex justify-between">
         <Button 
           variant="outline" 
@@ -224,7 +226,7 @@ const QuizMode = ({ deckId }: QuizModeProps) => {
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
-      
+
       {isQuizFinished && (
         <div className="mt-8 p-6 bg-white rounded-lg shadow border border-gray-200">
           <h3 className="text-xl font-bold mb-4">Quiz Results</h3>
