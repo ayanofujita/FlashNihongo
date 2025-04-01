@@ -140,11 +140,27 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       // Calculate new SRS parameters based on rating
       let interval: number;
       let ease = 250; // Default ease factor
+      let reviews = 1;
+      let lapses = 0;
+      
+      // First get existing progress if any to properly increment reviews/lapses
+      let existingProgress = null;
+      try {
+        const response = await fetch(`/api/study/progress?userId=${userId}&cardId=${cardId}`);
+        if (response.ok) {
+          existingProgress = await response.json();
+          reviews = (existingProgress?.reviews || 0) + 1;
+          lapses = existingProgress?.lapses || 0;
+        }
+      } catch (error) {
+        console.error("Failed to fetch existing progress:", error);
+      }
       
       switch (rating) {
         case 'again':
           interval = AGAIN_INTERVAL;
           ease = 200; // Lower ease for "again" responses
+          lapses += 1; // Increment lapses for "again" responses
           break;
         case 'hard':
           interval = HARD_INTERVAL_FACTOR * INITIAL_INTERVAL;
@@ -160,9 +176,12 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
           break;
       }
       
-      // Calculate next review date
+      // Calculate next review date based on the interval in days
+      // This ensures cards won't show up until their due date
       const now = new Date();
       const nextReview = new Date(now.getTime() + interval * 24 * 60 * 60 * 1000);
+      
+      console.log(`Card ${cardId} next review: ${nextReview.toISOString()}, interval: ${interval} days`);
       
       await apiRequest("POST", "/api/study/progress", {
         cardId,
@@ -170,8 +189,8 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
         ease,
         interval,
         nextReview: nextReview.toISOString(),
-        reviews: 1,
-        lapses: rating === 'again' ? 1 : 0
+        reviews,
+        lapses
       });
     },
     onSuccess: () => {

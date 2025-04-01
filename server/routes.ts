@@ -188,6 +188,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/study/progress", async (req, res) => {
+    try {
+      const userId = parseInt(req.query.userId as string);
+      const cardId = parseInt(req.query.cardId as string);
+      
+      if (!userId || !cardId) {
+        return res.status(400).json({ message: "User ID and Card ID are required" });
+      }
+      
+      const progress = await storage.getStudyProgress(userId, cardId);
+      if (!progress) {
+        return res.status(404).json({ message: "Study progress not found" });
+      }
+      
+      res.json(progress);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch study progress" });
+    }
+  });
+
   app.post("/api/study/progress", async (req, res) => {
     try {
       const { cardId, userId, ease, interval, reviews, lapses, nextReview } = req.body;
@@ -195,6 +215,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!cardId || !userId) {
         return res.status(400).json({ message: "Card ID and User ID are required" });
       }
+      
+      console.log(`Updating study progress for card ${cardId}, user ${userId}, nextReview: ${nextReview}`);
       
       const progress = await storage.updateStudyProgress(cardId, userId, {
         ease, interval, reviews, lapses, nextReview: nextReview ? new Date(nextReview) : undefined

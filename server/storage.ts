@@ -279,18 +279,33 @@ export class MemStorage implements IStorage {
       (card) => deckIds.includes(card.deckId)
     );
     
+    console.log(`Checking ${deckCards.length} cards for user ${userId}`);
+    
     for (const card of deckCards) {
       const key = `${userId}-${card.id}`;
       const progress = this.studyProgresses.get(key);
       const cardCreatedAt = card.createdAt ? new Date(card.createdAt) : null;
+      
+      // Only consider a card created within the last hour as "new" to avoid showing too many cards
       const createdRecently = cardCreatedAt && 
-        ((now.getTime() - cardCreatedAt.getTime()) < 24 * 60 * 60 * 1000); // Created less than 24 hours ago
+        ((now.getTime() - cardCreatedAt.getTime()) < 1 * 60 * 60 * 1000); // Created less than 1 hour ago
+      
+      // Check if the card is due for review
+      const isDue = !progress || !progress.nextReview || progress.nextReview <= now;
+      
+      // Log for debugging purposes
+      if (progress) {
+        const nextReviewDate = progress.nextReview ? progress.nextReview.toISOString() : "undefined";
+        console.log(`Card ${card.id} - nextReview: ${nextReviewDate}, isDue: ${isDue}, now: ${now.toISOString()}`);
+      } else {
+        console.log(`Card ${card.id} - No progress record, consider due`);
+      }
       
       // Cards are due if:
       // 1. No progress record exists, or
       // 2. Next review date is <= now, or
-      // 3. Card was created recently (within last 24 hours)
-      if (!progress || !progress.nextReview || progress.nextReview <= now || createdRecently) {
+      // 3. Card was created recently (within last hour)
+      if (isDue || createdRecently) {
         dueCards.push(card);
       }
     }
@@ -302,6 +317,7 @@ export class MemStorage implements IStorage {
       return bCreatedAt - aCreatedAt; // Newer cards first
     });
     
+    console.log(`Returning ${dueCards.length} due cards for review`);
     return dueCards;
   }
 

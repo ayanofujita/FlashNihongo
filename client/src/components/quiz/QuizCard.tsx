@@ -18,15 +18,18 @@ const QuizCard = ({
   const getOptionStyle = (option: string) => {
     if (!selectedOption) return "";
     
+    // Always highlight the correct answer in green when a selection is made
     if (option === correctAnswer) {
-      return "border-green-500 bg-green-50 font-semibold";
+      return "border-2 border-green-500 bg-green-50 font-semibold text-green-700";
     }
     
+    // Highlight the selected wrong answer in red
     if (option === selectedOption && option !== correctAnswer) {
-      return "border-red-500 bg-red-50";
+      return "border-2 border-red-500 bg-red-50 text-red-700";
     }
     
-    return "";
+    // Non-selected options get a subtle fade after selection
+    return "opacity-60";
   };
   
   return (
@@ -39,11 +42,14 @@ const QuizCard = ({
           {options.map((option, index) => (
             <button
               key={index}
-              className={`border border-gray-300 rounded-lg py-3 px-4 text-left hover:bg-gray-50 transition break-words ${getOptionStyle(option)}`}
+              className={`border border-gray-300 rounded-lg py-3 px-4 text-left hover:bg-gray-50 transition ${getOptionStyle(option)}`}
               onClick={() => onSelect(option)}
               disabled={selectedOption !== null}
             >
-              <span className="font-medium">{['A', 'B', 'C', 'D'][index]}.</span> <span className="break-words">{option}</span>
+              <div className="flex">
+                <span className="font-medium mr-2 flex-shrink-0">{['A', 'B', 'C', 'D'][index]}.</span> 
+                <span className="break-words w-full overflow-hidden">{option}</span>
+              </div>
             </button>
           ))}
         </div>
