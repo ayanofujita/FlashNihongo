@@ -1,5 +1,5 @@
 import { useLocation, Link } from "wouter";
-import { Book, GraduationCap, HelpCircle, Search, Settings } from "lucide-react";
+import { Book, GraduationCap, HelpCircle, Search } from "lucide-react";
 
 const Navigation = () => {
   const [location] = useLocation();
@@ -50,16 +50,6 @@ const Navigation = () => {
                 : "text-gray-500 hover:text-gray-700"
             }`}>
               <Search className="mr-2 h-4 w-4" /> Search
-            </a>
-          </Link>
-          
-          <Link href="/settings">
-            <a className={`px-4 py-3 flex-shrink-0 flex items-center ${
-              isActive("/settings") 
-                ? "text-blue-600 border-b-2 border-blue-600 font-medium" 
-                : "text-gray-500 hover:text-gray-700"
-            }`}>
-              <Settings className="mr-2 h-4 w-4" /> Settings
             </a>
           </Link>
         </nav>
