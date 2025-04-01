@@ -125,11 +125,18 @@ const DeckCard = ({ id, name, description, cardCount, lastStudied }: DeckCardPro
           </div>
         </CardContent>
         <CardFooter className="bg-gray-50 p-3 border-t border-gray-200 flex justify-between">
-          <Button variant="ghost" className="text-blue-600 hover:text-blue-800 font-medium text-sm h-auto p-0" asChild>
-            <Link href={`/study/${id}`}>
-              <GraduationCap className="h-4 w-4 mr-1" /> Study
-            </Link>
-          </Button>
+          <div className="flex space-x-4">
+            <Button variant="ghost" className="text-blue-600 hover:text-blue-800 font-medium text-sm h-auto p-0" asChild>
+              <Link href={`/study/${id}`}>
+                <GraduationCap className="h-4 w-4 mr-1" /> Study
+              </Link>
+            </Button>
+            <Button variant="ghost" className="text-indigo-600 hover:text-indigo-800 font-medium text-sm h-auto p-0" asChild>
+              <Link href={`/decks/${id}/cards`}>
+                <Layers className="h-4 w-4 mr-1" /> View Cards
+              </Link>
+            </Button>
+          </div>
           <Button variant="ghost" className="text-violet-600 hover:text-violet-800 font-medium text-sm h-auto p-0" asChild>
             <Link href={`/quiz/${id}`}>
               <HelpCircle className="h-4 w-4 mr-1" /> Quiz

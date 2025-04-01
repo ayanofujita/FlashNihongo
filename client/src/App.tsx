@@ -11,6 +11,7 @@ import DecksPage from "@/pages/DecksPage";
 import StudyPage from "@/pages/StudyPage";
 import QuizPage from "@/pages/QuizPage";
 import SearchPage from "@/pages/SearchPage";
+import DeckViewPage from "@/pages/DeckViewPage";
 
 function Router() {
   return (
@@ -21,6 +22,7 @@ function Router() {
         <Switch>
           <Route path="/" component={DecksPage} />
           <Route path="/decks" component={DecksPage} />
+          <Route path="/decks/:deckId/cards" component={DeckViewPage} />
           <Route path="/study/:deckId?" component={StudyPage} />
           <Route path="/quiz/:deckId?" component={QuizPage} />
           <Route path="/search" component={SearchPage} />
