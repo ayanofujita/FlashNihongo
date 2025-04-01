@@ -244,6 +244,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json([]);
       }
 
+      // If a specific deck ID is requested
       if (req.query.deckId) {
         const deckId = parseInt(req.query.deckId as string);
         const deck = decks.find(d => d.id === deckId);
@@ -265,6 +266,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get all decks with due info
       const decksWithDueInfo = await Promise.all(
         decks.map(async (deck) => {
+          const cards = await storage.getCards(deck.id);
+          
+          // Skip decks with no cards
+          if (!cards || cards.length === 0) {
+            return {
+              ...deck,
+              hasDueCards: false,
+              dueCardCount: 0
+            };
+          }
+          
           const dueCards = await storage.getCardsDueForReview(userId, [deck.id]);
           return {
             ...deck,
@@ -278,6 +290,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.query.filter === 'true') {
         return res.json(decksWithDueInfo.filter(deck => deck.hasDueCards));
       }
+      
+      // Log the number of decks and their due status
+      console.log(`Returning ${decksWithDueInfo.length} decks with due info`);
+      decksWithDueInfo.forEach(deck => {
+        console.log(`Deck ${deck.id}: ${deck.name} - Due cards: ${deck.dueCardCount}, hasDueCards: ${deck.hasDueCards}`);
+      });
       
       return res.json(decksWithDueInfo);
     } catch (error) {

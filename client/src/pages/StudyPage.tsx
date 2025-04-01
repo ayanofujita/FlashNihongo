@@ -18,8 +18,22 @@ const StudyPage = () => {
   const { deckId } = useParams();
   
   // Query decks with due cards information
-  const { data: decks, isLoading } = useQuery<Deck[]>({
+  const { data: decks, isLoading, error } = useQuery<Deck[]>({
     queryKey: ["/api/decks/due"],
+    queryFn: async () => {
+      console.log("Fetching decks with due cards...");
+      const response = await fetch("/api/decks/due?userId=1");
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Failed to fetch decks with due cards: ${response.status} ${response.statusText}`, errorText);
+        return [];
+      }
+      
+      const data = await response.json();
+      console.log("Received decks with due info:", data);
+      return data;
+    }
   });
   
   // If no deck ID is provided, show a deck selection screen
