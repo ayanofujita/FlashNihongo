@@ -2,7 +2,7 @@ import { Link } from "wouter";
 
 const Footer = () => {
   return (
-    <footer className="bg-white border-t border-gray-200 py-3 px-6 flex-shrink-0">
+    <footer className="bg-white border-t border-gray-200 py-3 px-6 flex-shrink-0 md:block hidden">
       <div className="flex flex-col sm:flex-row justify-between items-center">
         <div className="text-xs text-gray-500 mb-2 sm:mb-0">
           © {new Date().getFullYear()} NihongoFlash

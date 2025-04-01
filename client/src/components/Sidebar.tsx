@@ -12,7 +12,7 @@ const Sidebar = () => {
   };
   
   return (
-    <div className="bg-white shadow w-64 flex-shrink-0 h-screen flex flex-col">
+    <div className="bg-white shadow w-60 flex-shrink-0 h-screen flex flex-col">
       {/* Logo/Header Section */}
       <div className="p-4 border-b flex-shrink-0">
         <Link href="/">
