@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useUser } from "../auth/UserContext";
 import { useQuery } from "@tanstack/react-query";
 import DeckCard from "./DeckCard";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import DeckForm from "./DeckForm";
@@ -41,6 +43,20 @@ const DeckList = () => {
     },
     enabled: !!decks,
   });
+
+  const { user } = useUser();
+
+  if (!user) {
+    return (
+      <div className="text-center py-10 bg-white rounded-lg shadow border border-gray-200 p-8">
+        <h3 className="text-xl font-semibold mb-3">Sign In Required</h3>
+        <p className="text-gray-600 mb-6">Please sign in to create and manage your flashcard decks.</p>
+        <Button asChild className="bg-blue-600 hover:bg-blue-700">
+          <Link href="/auth/login">Sign In</Link>
+        </Button>
+      </div>
+    );
+  }
 
   if (error) {
     return (
