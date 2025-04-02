@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Settings, X } from "lucide-react";
 import StudyCard from "./StudyCard";
 import { useLocation } from "wouter";
+import { useUser } from "@/components/auth/UserContext";
 
 interface Card {
   id: number;
@@ -39,6 +40,7 @@ const EASE_MODIFIER = 0.15; // How much to adjust ease on each review
 const StudyMode = ({ deckId }: StudyModeProps) => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const { user } = useUser(); // Get the current authenticated user
   
   // Track the cards that have been completed
   const [completed, setCompleted] = useState<number[]>([]);
@@ -67,12 +69,16 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
   const { data: dueCards, isLoading: isCardsLoading } = useQuery<Card[]>({
     queryKey: [`/api/study/due`, deckId],
     queryFn: async () => {
-      const response = await fetch(`/api/study/due?userId=1&deckIds=${deckId}`);
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+      const response = await fetch(`/api/study/due?userId=${user.id}&deckIds=${deckId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch due cards');
       }
       return response.json();
-    }
+    },
+    enabled: !!user
   });
   
   // Set up cards to study whenever dueCards changes
@@ -131,12 +137,16 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
   // Mutation to update user streak
   const updateStreakMutation = useMutation({
     mutationFn: async () => {
-      const userId = 1; // Default user for this example
-      await apiRequest("POST", `/api/user-stats/update-streak/${userId}`);
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+      await apiRequest("POST", `/api/user-stats/update-streak/${user.id}`);
     },
     onSuccess: () => {
-      // Invalidate user stats queries
-      queryClient.invalidateQueries({ queryKey: [`/api/user-stats/${1}`] });
+      if (user) {
+        // Invalidate user stats queries
+        queryClient.invalidateQueries({ queryKey: [`/api/user-stats/${user.id}`] });
+      }
     },
     onError: (error) => {
       console.error("Failed to update streak:", error);
@@ -146,12 +156,16 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
   // Mutation to increment review stats
   const incrementReviewStatsMutation = useMutation({
     mutationFn: async (correct: boolean) => {
-      const userId = 1; // Default user for this example
-      await apiRequest("POST", `/api/user-stats/increment-review/${userId}`, { correct });
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+      await apiRequest("POST", `/api/user-stats/increment-review/${user.id}`, { correct });
     },
     onSuccess: () => {
-      // Invalidate user stats queries
-      queryClient.invalidateQueries({ queryKey: [`/api/user-stats/${1}`] });
+      if (user) {
+        // Invalidate user stats queries
+        queryClient.invalidateQueries({ queryKey: [`/api/user-stats/${user.id}`] });
+      }
     },
     onError: (error) => {
       console.error("Failed to increment review stats:", error);
@@ -167,7 +181,10 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       cardId: number; 
       rating: 'again' | 'hard' | 'good' | 'easy';
     }) => {
-      const userId = 1; // Default user for this example
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+      const userId = user.id;
       
       // Calculate new SRS parameters based on rating
       let interval: number;
@@ -272,8 +289,6 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     }
     
     try {
-      const userId = 1; // Default user
-      
       // Update the progress in the backend
       await updateProgress.mutateAsync({ cardId: currentCard.id, rating });
       
