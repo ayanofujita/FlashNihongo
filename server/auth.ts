@@ -22,10 +22,25 @@ export function setupAuth(app: Express) {
     console.log('Google OAuth credentials found successfully');
   }
   
-  const callbackURL = process.env.REPLIT_DOMAINS 
-    ? `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}/auth/google/callback`
-    : 'http://localhost:5000/auth/google/callback';
+  // Get all possible domain names from environment
+  const replit_domains = process.env.REPLIT_DOMAINS || '';
+  const allDomains = replit_domains.split(',').filter(Boolean);
+  
+  // Get the primary domain for callback
+  let callbackURL = 'http://localhost:5000/auth/google/callback'; // Default for local development
+  
+  if (allDomains.length > 0) {
+    // Prioritize domain with '.repl.co' for development
+    const devDomain = allDomains.find(d => d.includes('.riker.replit.dev'));
+    // Prioritize custom domain or .replit.app domain for production
+    const prodDomain = allDomains.find(d => !d.includes('.riker.replit.dev') && !d.includes('localhost'));
     
+    // Use production domain if available, otherwise development domain
+    const primaryDomain = prodDomain || devDomain || allDomains[0];
+    callbackURL = `https://${primaryDomain}/auth/google/callback`;
+  }
+  
+  console.log('All possible domains:', allDomains);
   console.log('Google OAuth callback URL configured as:', callbackURL);
   
   try {

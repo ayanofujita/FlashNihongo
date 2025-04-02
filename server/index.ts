@@ -62,6 +62,22 @@ const PostgresqlStore = pgSession(session);
   }
 })();
 
+// Determine environment type
+const isProduction = process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DOMAINS && !process.env.REPLIT_DOMAINS.includes('localhost');
+console.log(`Running in ${isProduction ? 'production' : 'development'} mode`);
+
+// Get domain for cookie setup
+const domains = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',').filter(Boolean) : [];
+const primaryDomain = domains.find(d => !d.includes('localhost') && !d.includes('.riker.replit.dev')) || 
+                     domains.find(d => d.includes('.replit.app')) || 
+                     domains[0];
+
+console.log('Using session configuration:', {
+  isProduction,
+  hasPrimaryDomain: !!primaryDomain,
+  sessionSecret: process.env.SESSION_SECRET ? 'Present' : 'Missing'
+});
+
 app.use(session({
   store: new PostgresqlStore({
     pool,
@@ -72,9 +88,13 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-  }
+    secure: isProduction, // Only use secure cookies in production
+    sameSite: isProduction ? 'none' : 'lax', // Needed for cross-site login in production
+    httpOnly: true,
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    // Omitting domain completely to let the browser set it automatically based on the current domain
+  },
+  proxy: isProduction // Trust the reverse proxy in production
 }));
 
 setupAuth(app);
