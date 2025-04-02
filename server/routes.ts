@@ -338,7 +338,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Study routes
   app.get("/api/study/due", async (req, res) => {
     try {
-      const userId = parseInt(req.query.userId as string) || 1; // Default to user 1 for this example
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
       const deckIds =
         (req.query.deckIds as string)?.split(",").map((id) => parseInt(id)) ||
         [];
