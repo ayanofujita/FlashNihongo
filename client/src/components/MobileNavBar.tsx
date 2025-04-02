@@ -17,53 +17,53 @@ const MobileNavBar = () => {
     <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-10">
       <div className="flex justify-around items-center">
         <Link href="/">
-          <div className={`p-3 flex flex-col items-center justify-center cursor-pointer ${
+          <a className={`p-3 flex flex-col items-center justify-center ${
             isActive("/") ? "text-blue-600" : "text-gray-500"
           }`}>
             <Home className="h-5 w-5" />
             <span className="text-xs mt-1">Home</span>
-          </div>
+          </a>
         </Link>
         
         <Link href="/decks">
-          <div className={`p-3 flex flex-col items-center justify-center cursor-pointer ${
+          <a className={`p-3 flex flex-col items-center justify-center ${
             isActive("/decks") ? "text-blue-600" : "text-gray-500"
           }`}>
             <Book className="h-5 w-5" />
             <span className="text-xs mt-1">Decks</span>
-          </div>
+          </a>
         </Link>
         
         <Link href="/study">
-          <div className={`p-3 flex flex-col items-center justify-center cursor-pointer ${
+          <a className={`p-3 flex flex-col items-center justify-center ${
             isActive("/study") ? "text-blue-600" : "text-gray-500"
           }`}>
             <GraduationCap className="h-5 w-5" />
             <span className="text-xs mt-1">Study</span>
-          </div>
+          </a>
         </Link>
         
         <Link href="/quiz">
-          <div className={`p-3 flex flex-col items-center justify-center cursor-pointer ${
+          <a className={`p-3 flex flex-col items-center justify-center ${
             isActive("/quiz") ? "text-blue-600" : "text-gray-500"
           }`}>
             <HelpCircle className="h-5 w-5" />
             <span className="text-xs mt-1">Quiz</span>
-          </div>
+          </a>
         </Link>
         
         <Link href="/search">
-          <div className={`p-3 flex flex-col items-center justify-center cursor-pointer ${
+          <a className={`p-3 flex flex-col items-center justify-center ${
             isActive("/search") ? "text-blue-600" : "text-gray-500"
           }`}>
             <Search className="h-5 w-5" />
             <span className="text-xs mt-1">Search</span>
-          </div>
+          </a>
         </Link>
         
         {user ? (
           <Link href="/profile">
-            <div className={`p-3 flex flex-col items-center justify-center cursor-pointer ${
+            <a className={`p-3 flex flex-col items-center justify-center ${
               isActive("/profile") ? "text-blue-600" : "text-gray-500"
             }`}>
               <Avatar className="h-6 w-6">
@@ -71,16 +71,16 @@ const MobileNavBar = () => {
                 <AvatarFallback>{user.displayName?.[0] || user.username[0]}</AvatarFallback>
               </Avatar>
               <span className="text-xs mt-1">Profile</span>
-            </div>
+            </a>
           </Link>
         ) : (
-          <div 
-            onClick={() => window.location.href = "/auth/google"}
-            className={`p-3 flex flex-col items-center justify-center cursor-pointer text-gray-500`}
+          <a 
+            href="/auth/google"
+            className={`p-3 flex flex-col items-center justify-center text-gray-500`}
           >
             <LogIn className="h-5 w-5" />
             <span className="text-xs mt-1">Sign In</span>
-          </div>
+          </a>
         )}
       </div>
     </div>

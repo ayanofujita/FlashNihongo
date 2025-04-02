@@ -2,7 +2,6 @@
   "name": "FlashNihongo",
   "short_name": "FlashNihongo",
   "description": "Japanese learning flashcard application with spaced repetition",
-  "version": "1.0.0",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

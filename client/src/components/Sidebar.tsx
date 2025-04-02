@@ -28,23 +28,22 @@ const Sidebar = () => {
       {/* User Profile Section */}
       <div className="p-4 border-b flex-shrink-0">
         {user ? (
-          <div 
-            className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => window.location.href = "/profile"}
-          >
-            <Avatar className="w-10 h-10">
-              <AvatarImage src={user.profilePicture || undefined} />
-              <AvatarFallback>
-                {user.displayName?.[0] || user.username[0]}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="font-medium">
-                {user.displayName || user.username}
-              </p>
-              <p className="text-sm text-gray-500">{user.email}</p>
-            </div>
-          </div>
+          <Link href="/profile">
+            <a className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity">
+              <Avatar className="w-10 h-10">
+                <AvatarImage src={user.profilePicture || undefined} />
+                <AvatarFallback>
+                  {user.displayName?.[0] || user.username[0]}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-medium">
+                  {user.displayName || user.username}
+                </p>
+                <p className="text-sm text-gray-500">{user.email}</p>
+              </div>
+            </a>
+          </Link>
         ) : (
           <LoginButton />
         )}
@@ -54,63 +53,63 @@ const Sidebar = () => {
       <div className="flex-grow py-4">
         <nav className="space-y-1">
           <Link href="/">
-            <div
+            <a
               className={`px-4 py-3 flex items-center ${
                 isActive("/")
                   ? "text-blue-600 bg-blue-50 border-r-4 border-blue-600 font-medium"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              } transition-colors duration-200 cursor-pointer`}
+              } transition-colors duration-200`}
             >
               <Home className="mr-3 h-5 w-5" /> Home
-            </div>
+            </a>
           </Link>
 
           <Link href="/decks">
-            <div
+            <a
               className={`px-4 py-3 flex items-center ${
                 isActive("/decks")
                   ? "text-blue-600 bg-blue-50 border-r-4 border-blue-600 font-medium"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              } transition-colors duration-200 cursor-pointer`}
+              } transition-colors duration-200`}
             >
               <Book className="mr-3 h-5 w-5" /> Decks
-            </div>
+            </a>
           </Link>
 
           <Link href="/study">
-            <div
+            <a
               className={`px-4 py-3 flex items-center ${
                 isActive("/study")
                   ? "text-blue-600 bg-blue-50 border-r-4 border-blue-600 font-medium"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              } transition-colors duration-200 cursor-pointer`}
+              } transition-colors duration-200`}
             >
               <GraduationCap className="mr-3 h-5 w-5" /> Study
-            </div>
+            </a>
           </Link>
 
           <Link href="/quiz">
-            <div
+            <a
               className={`px-4 py-3 flex items-center ${
                 isActive("/quiz")
                   ? "text-blue-600 bg-blue-50 border-r-4 border-blue-600 font-medium"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              } transition-colors duration-200 cursor-pointer`}
+              } transition-colors duration-200`}
             >
               <HelpCircle className="mr-3 h-5 w-5" /> Quiz
-            </div>
+            </a>
           </Link>
 
           <Link href="/search">
-            <div
+            <a
               className={`px-4 py-3 flex items-center ${
                 isActive("/search")
                   ? "text-blue-600 bg-blue-50 border-r-4 border-blue-600 font-medium"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              } transition-colors duration-200 cursor-pointer`}
+              } transition-colors duration-200`}
             >
               <Search className="mr-3 h-5 w-5" /> Search
-            </div>
+            </a>
           </Link>
         </nav>
       </div>
