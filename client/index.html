@@ -1,57 +1,78 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FlashNihongo - Japanese Flashcard App</title>
-  <meta name="description" content="A Japanese learning flashcard application with spaced repetition and Jisho integration">
-  <meta name="theme-color" content="#4338ca">
-  
-  <!-- Cache-busting meta tags -->
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-  
-  <!-- PWA setup -->
-  <link rel="manifest" href="/manifest.json">
-  <link rel="apple-touch-icon" href="/icon-192x192.png">
-  
-  <!-- Fonts and styles -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
-</head>
-<body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
-  
-  <!-- PWA registration with update handling -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        // Register the service worker
-        navigator.serviceWorker.register('/sw.js?v=' + new Date().getTime())
-          .then(registration => {
-            console.log('ServiceWorker registration successful with scope: ', registration.scope);
-            
-            // Add a listener for updated service workers
-            registration.addEventListener('updatefound', () => {
-              const newWorker = registration.installing;
-              
-              // Listen to state changes of the new worker
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  // New version available
-                  console.log('New version available! Wait for user to trigger update.');
-                  // We'll let the React app handle the update process
-                }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NihongoFlash - Japanese Flashcard App</title>
+    <meta
+      name="description"
+      content="A Japanese learning flashcard application with spaced repetition and Jisho integration"
+    />
+    <meta name="theme-color" content="#4338ca" />
+
+    <!-- Cache-busting meta tags -->
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
+    <!-- PWA setup -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/icon-192x192.png" />
+
+    <!-- Fonts and styles -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+
+    <!-- PWA registration with update handling -->
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          // Register the service worker
+          navigator.serviceWorker
+            .register("/sw.js?v=" + new Date().getTime())
+            .then((registration) => {
+              console.log(
+                "ServiceWorker registration successful with scope: ",
+                registration.scope,
+              );
+
+              // Add a listener for updated service workers
+              registration.addEventListener("updatefound", () => {
+                const newWorker = registration.installing;
+
+                // Listen to state changes of the new worker
+                newWorker.addEventListener("statechange", () => {
+                  if (
+                    newWorker.state === "installed" &&
+                    navigator.serviceWorker.controller
+                  ) {
+                    // New version available
+                    console.log(
+                      "New version available! Wait for user to trigger update.",
+                    );
+                    // We'll let the React app handle the update process
+                  }
+                });
               });
+            })
+            .catch((error) => {
+              console.log("ServiceWorker registration failed: ", error);
             });
-          })
-          .catch(error => {
-            console.log('ServiceWorker registration failed: ', error);
-          });
-      });
-    }
-  </script>
-</body>
+        });
+      }
+    </script>
+  </body>
 </html>
