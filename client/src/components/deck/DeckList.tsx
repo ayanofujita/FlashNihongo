@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import DeckCard from "./DeckCard";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, LogIn } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import DeckForm from "./DeckForm";
+import { useUser } from "@/components/auth/UserContext";
 
 interface Deck {
   id: number;
@@ -17,6 +19,7 @@ interface Deck {
 
 const DeckList = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const { user, isLoading: isUserLoading } = useUser();
   
   const { data: decks, isLoading, error } = useQuery<Deck[]>({
     queryKey: ["/api/decks"],
@@ -41,6 +44,23 @@ const DeckList = () => {
     },
     enabled: !!decks,
   });
+
+  // If user is not logged in, show sign-in prompt
+  if (!isUserLoading && !user) {
+    return (
+      <div className="text-center py-16">
+        <h2 className="text-2xl font-bold mb-4">Please Sign In</h2>
+        <p className="text-gray-600 mb-6 max-w-md mx-auto">
+          You need to sign in to view your flashcard decks and start studying.
+        </p>
+        <Button className="bg-blue-600 hover:bg-blue-700" asChild>
+          <Link href="/auth/google">
+            <LogIn className="h-4 w-4 mr-2" /> Sign in with Google
+          </Link>
+        </Button>
+      </div>
+    );
+  }
 
   if (error) {
     return (

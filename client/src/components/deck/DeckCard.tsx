@@ -69,7 +69,7 @@ const DeckCard = ({ id, name, description, cardCount, lastStudied }: DeckCardPro
   return (
     <>
       <Card className="overflow-hidden border border-gray-200 hover:shadow-lg transition flex flex-col h-full">
-        <CardContent className="p-5 flex-1">
+        <CardContent className="p-5 flex-1 flex flex-col">
           <div className="flex justify-between items-start">
             <h3 className="text-lg font-bold text-gray-800">{name}</h3>
             <div className="flex space-x-2">
@@ -130,7 +130,13 @@ const DeckCard = ({ id, name, description, cardCount, lastStudied }: DeckCardPro
 
             </div>
           </div>
-          <p className="text-gray-600 mt-2 text-sm">{description}</p>
+          
+          {/* Description area with flex-grow to push stats to bottom */}
+          <div className="flex-grow">
+            {description && <p className="text-gray-600 mt-2 text-sm">{description}</p>}
+          </div>
+          
+          {/* Stats always at the bottom */}
           <div className="flex justify-between items-center mt-4">
             <div className="flex items-center">
               <Layers className="h-4 w-4 text-gray-400 mr-2" />

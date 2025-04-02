@@ -28,34 +28,40 @@ const HomePage = () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-12">
-        <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
+        <div className="bg-white rounded-lg shadow p-6 border border-gray-200 flex flex-col h-full">
           <h2 className="text-xl font-bold mb-4">Study with SRS</h2>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-600 mb-4 flex-grow">
             Optimize your learning with our spaced repetition system. Focus on what you need to review most.
           </p>
-          <Button variant="ghost" className="text-blue-600" asChild>
-            <Link href="/study">Start Studying</Link>
-          </Button>
+          <div className="mt-auto pt-4">
+            <Button variant="ghost" className="text-blue-600" asChild>
+              <Link href="/study">Start Studying</Link>
+            </Button>
+          </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
+        <div className="bg-white rounded-lg shadow p-6 border border-gray-200 flex flex-col h-full">
           <h2 className="text-xl font-bold mb-4">Test Your Knowledge</h2>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-600 mb-4 flex-grow">
             Challenge yourself with multiple-choice quizzes from any of your decks.
           </p>
-          <Button variant="ghost" className="text-violet-600" asChild>
-            <Link href="/quiz">Take a Quiz</Link>
-          </Button>
+          <div className="mt-auto pt-4">
+            <Button variant="ghost" className="text-violet-600" asChild>
+              <Link href="/quiz">Take a Quiz</Link>
+            </Button>
+          </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
+        <div className="bg-white rounded-lg shadow p-6 border border-gray-200 flex flex-col h-full">
           <h2 className="text-xl font-bold mb-4">Look Up Words</h2>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-600 mb-4 flex-grow">
             Search for Japanese words and add them directly to your flashcard decks.
           </p>
-          <Button variant="ghost" className="text-green-600" asChild>
-            <Link href="/search">Search Dictionary</Link>
-          </Button>
+          <div className="mt-auto pt-4">
+            <Button variant="ghost" className="text-green-600" asChild>
+              <Link href="/search">Search Dictionary</Link>
+            </Button>
+          </div>
         </div>
       </div>
     </div>
