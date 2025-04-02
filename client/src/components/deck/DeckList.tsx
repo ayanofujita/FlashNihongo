@@ -53,10 +53,11 @@ const DeckList = () => {
         <p className="text-gray-600 mb-6 max-w-md mx-auto">
           You need to sign in to view your flashcard decks and start studying.
         </p>
-        <Button className="bg-blue-600 hover:bg-blue-700" asChild>
-          <Link href="/auth/google">
-            <LogIn className="h-4 w-4 mr-2" /> Sign in with Google
-          </Link>
+        <Button 
+          className="bg-blue-600 hover:bg-blue-700"
+          onClick={() => window.location.href = '/auth/google'}
+        >
+          <LogIn className="h-4 w-4 mr-2" /> Sign in with Google
         </Button>
       </div>
     );
