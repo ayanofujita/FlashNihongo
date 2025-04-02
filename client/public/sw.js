@@ -1,13 +1,20 @@
 // Service Worker for FlashNihongo PWA
 
 // Increment this version number whenever you make significant changes
-const CACHE_NAME = 'flashnihongo-cache-v4'; // Updated cache version
+const CACHE_NAME = 'flashnihongo-cache-v5'; // Updated cache version
 const BUILD_TIME = new Date().getTime(); // Add a timestamp to force cache refresh
 
 // Skip waiting and claim clients immediately
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+    
+    // Tell all clients this service worker is now active
+    self.clients.matchAll().then(clients => {
+      clients.forEach(client => client.postMessage({
+        type: 'WORKER_UPDATED'
+      }));
+    });
   }
 });
 const urlsToCache = [
