@@ -1,5 +1,5 @@
 import { useUser } from "@/components/auth/UserContext";
-import { UserStats } from "@/components/UserStats";
+import UserStats from "@/components/UserStats";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
