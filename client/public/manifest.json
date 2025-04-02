@@ -1,6 +1,6 @@
 {
-  "name": "FlashNihongo",
-  "short_name": "FlashNihongo",
+  "name": "NihongoFlash",
+  "short_name": "NihongoFlash",
   "description": "Japanese learning flashcard application with spaced repetition",
   "start_url": "/",
   "display": "standalone",

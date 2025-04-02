@@ -22,7 +22,7 @@ const Header = () => {
         <div className="flex items-center">
           <Link href="/">
             <div className="flex items-center cursor-pointer hover:opacity-80 transition-opacity">
-              <h1 className="text-2xl font-bold text-blue-600">Flash日本語</h1>
+              <h1 className="text-2xl font-bold text-blue-600">日本語Flash</h1>
             </div>
           </Link>
         </div>

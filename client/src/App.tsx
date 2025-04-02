@@ -83,7 +83,8 @@ function UpdateNotification() {
         setHasCheckedUpdate(true);
       });
     }
-  }, [toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   return null; // This component doesn't render anything visible
 }

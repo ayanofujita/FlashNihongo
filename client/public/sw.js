@@ -1,7 +1,7 @@
-// Service Worker for FlashNihongo PWA
+// Service Worker for NihongoFlash PWA
 
 // Increment this version number whenever you make significant changes
-const CACHE_NAME = 'flashnihongo-cache-v5'; // Updated cache version
+const CACHE_NAME = 'nihongoflash-cache-v1'; // Updated cache version
 const BUILD_TIME = new Date().getTime(); // Add a timestamp to force cache refresh
 
 // Skip waiting and claim clients immediately
