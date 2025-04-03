@@ -400,16 +400,27 @@ export class DatabaseStorage implements IStorage {
   
       if (existingProgress) {
         // Update existing progress
-        const updateData = { 
-          ...update,
-          lastReviewed: now 
+        // Create a properly typed update object for Drizzle with explicit typing
+        const typedUpdateData: Record<string, any> = {
+          lastReviewed: now
         };
         
-        console.log(`Updating existing progress with data:`, JSON.stringify(updateData));
+        // Only include fields that are present in the update
+        if (update.ease !== undefined) typedUpdateData.ease = update.ease;
+        if (update.reviews !== undefined) typedUpdateData.reviews = update.reviews;
+        if (update.lapses !== undefined) typedUpdateData.lapses = update.lapses;
+        if (update.nextReview !== undefined) typedUpdateData.nextReview = update.nextReview;
+        
+        // Always convert interval to string if present
+        if (update.interval !== undefined) {
+          typedUpdateData.interval = String(update.interval);
+        }
+        
+        console.log(`Updating existing progress with data:`, JSON.stringify(typedUpdateData));
   
         const [updatedProgress] = await db
           .update(studyProgress)
-          .set(updateData)
+          .set(typedUpdateData as any)
           .where(
             and(
               eq(studyProgress.userId, userId),
@@ -419,7 +430,7 @@ export class DatabaseStorage implements IStorage {
           .returning();
         
         console.log(
-          `Progress updated for card ${cardId}, next review: ${updatedProgress.nextReview?.toISOString()}`
+          `Progress updated for card ${cardId}, next review: ${updatedProgress.nextReview?.toISOString()}, interval: ${updatedProgress.interval}, ease: ${updatedProgress.ease}`
         );
         
         return updatedProgress;
@@ -429,7 +440,9 @@ export class DatabaseStorage implements IStorage {
           cardId,
           userId,
           ease: update.ease || 250,
-          interval: update.interval ? update.interval.toString() : "0",
+          interval: update.interval 
+            ? String(update.interval)
+            : "0",
           reviews: update.reviews || 1,
           lapses: update.lapses || 0,
           lastReviewed: now,

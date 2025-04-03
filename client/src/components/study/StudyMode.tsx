@@ -220,7 +220,12 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       }
 
       // Base interval calculation on existing progress if available
-      let baseInterval = existingProgress?.interval || INITIAL_INTERVAL;
+      // Make sure to convert the stored interval string to a number
+      let baseInterval = existingProgress?.interval 
+        ? parseFloat(existingProgress.interval) 
+        : INITIAL_INTERVAL;
+        
+      console.log('Previous base interval:', baseInterval);
 
       // Adjust ease based on response
       switch (rating) {

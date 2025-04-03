@@ -109,15 +109,21 @@ export const studyProgress = pgTable("study_progress", {
   nextReview: timestamp("next_review"),
 });
 
-export const insertStudyProgressSchema = createInsertSchema(studyProgress).pick({
-  cardId: true,
-  userId: true,
-  ease: true,
-  interval: true,
-  reviews: true,
-  lapses: true,
-  nextReview: true,
-});
+// Create a schema and extend the interval to accept number type too
+export const insertStudyProgressSchema = createInsertSchema(studyProgress)
+  .pick({
+    cardId: true,
+    userId: true,
+    ease: true,
+    interval: true,
+    reviews: true,
+    lapses: true,
+    nextReview: true,
+  })
+  .extend({
+    // Allow interval to be either string or number
+    interval: z.union([z.string(), z.number()]).optional(),
+  });
 
 export type InsertStudyProgress = z.infer<typeof insertStudyProgressSchema>;
 export type StudyProgress = typeof studyProgress.$inferSelect;
