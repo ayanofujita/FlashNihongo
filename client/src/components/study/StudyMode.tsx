@@ -556,7 +556,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
   // Helper function to format an interval for display
   const formatInterval = (interval: number): string => {
     // Apply the interval modifier to show accurate predictions
-    const adjustedInterval = interval * intervalModifier;
+    const adjustedInterval = interval;
 
     // Convert to hours
     const hours = Math.round(adjustedInterval * 24);
@@ -578,19 +578,22 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     rating: "again" | "hard" | "good" | "easy",
   ): string => {
     // Get the current card's existing progress if any
-    const cardWithProgress = currentCard && dueCards
-      ? dueCards.find((c) => c.id === currentCard.id)
-      : null;
-      
+    const cardWithProgress =
+      currentCard && dueCards
+        ? dueCards.find((c) => c.id === currentCard.id)
+        : null;
+
     // Convert to StudyProgressType by extracting only relevant properties
-    const existingProgress: StudyProgressType | null = cardWithProgress ? {
-      interval: cardWithProgress.interval,
-      ease: cardWithProgress.ease,
-      reviews: cardWithProgress.reviews,
-      lapses: cardWithProgress.lapses,
-      nextReview: cardWithProgress.nextReview,
-      lastReviewed: cardWithProgress.lastReviewed,
-    } : null;
+    const existingProgress: StudyProgressType | null = cardWithProgress
+      ? {
+          interval: cardWithProgress.interval,
+          ease: cardWithProgress.ease,
+          reviews: cardWithProgress.reviews,
+          lapses: cardWithProgress.lapses,
+          nextReview: cardWithProgress.nextReview,
+          lastReviewed: cardWithProgress.lastReviewed,
+        }
+      : null;
 
     // Calculate the interval using our helper function and format it
     const interval = calculateInterval(
@@ -780,7 +783,8 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
                     <div className="text-gray-600 text-sm mb-3">
                       {currentCard.partOfSpeech}, {currentCard.reading}
                     </div>
-                    {(currentCard.example || currentCard.exampleTranslation) && (
+                    {(currentCard.example ||
+                      currentCard.exampleTranslation) && (
                       <div className="absolute top-3 right-3">
                         <Button
                           variant="outline"
@@ -792,7 +796,16 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
                           }}
                         >
                           <span className="sr-only">View Details</span>
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-blue-600">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="h-4 w-4 text-blue-600"
+                          >
                             <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                         </Button>
@@ -910,15 +923,19 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       <CardDetailsModal
         isOpen={cardDetailsOpen}
         onClose={() => setCardDetailsOpen(false)}
-        card={currentCard ? {
-          id: currentCard.id,
-          front: currentCard.front,
-          back: currentCard.back,
-          reading: currentCard.reading,
-          partOfSpeech: currentCard.partOfSpeech,
-          example: currentCard.example,
-          exampleTranslation: currentCard.exampleTranslation
-        } : null}
+        card={
+          currentCard
+            ? {
+                id: currentCard.id,
+                front: currentCard.front,
+                back: currentCard.back,
+                reading: currentCard.reading,
+                partOfSpeech: currentCard.partOfSpeech,
+                example: currentCard.example,
+                exampleTranslation: currentCard.exampleTranslation,
+              }
+            : null
+        }
         onEdit={() => {}} // Not editing from study mode
         onDelete={() => {}} // Not deleting from study mode
       />

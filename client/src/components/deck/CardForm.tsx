@@ -108,30 +108,6 @@ const CardForm = ({ deckId, cardId, defaultValues, onSuccess }: CardFormProps) =
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     try {
-      // If not in edit mode and there's no example, try to fetch one automatically
-      if (!isEditMode && !values.example && values.front) {
-        try {
-          setIsFetchingExamples(true);
-          const response = await fetch(`/api/examples?word=${encodeURIComponent(values.front)}`);
-          if (response.ok) {
-            const examples = await response.json();
-            if (examples && examples.length > 0) {
-              // Add the example to the values
-              values.example = examples[0].text;
-              values.exampleTranslation = examples[0].translation;
-              toast({
-                title: "Example added",
-                description: "An example sentence was automatically added to your card.",
-              });
-            }
-          }
-        } catch (err) {
-          console.error("Failed to auto-fetch examples:", err);
-          // Don't show an error toast here - just continue without an example
-        } finally {
-          setIsFetchingExamples(false);
-        }
-      }
 
       if (isEditMode) {
         await apiRequest("PUT", `/api/cards/${cardId}`, { ...values, deckId });

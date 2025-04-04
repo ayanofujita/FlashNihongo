@@ -34,6 +34,7 @@ interface AddToDeckModalProps {
 
 const AddToDeckModal = ({ isOpen, onClose, word }: AddToDeckModalProps) => {
   const [selectedDeckId, setSelectedDeckId] = useState<string>("");
+  const [isFetchingExamples, setIsFetchingExamples] = useState(false);
   const { toast } = useToast();
 
   const { data: decks, isLoading: isLoadingDecks } = useQuery<Deck[]>({
@@ -91,8 +92,36 @@ const AddToDeckModal = ({ isOpen, onClose, word }: AddToDeckModalProps) => {
     const back = word.senses[0]?.english_definitions.join("; ") || "";
     const reading = word.japanese[0]?.reading || "";
     const partOfSpeech = word.senses[0]?.parts_of_speech?.join(", ") || "";
-    const example = word.senses[0]?.examples?.[0]?.text || "";
-    const exampleTranslation = word.senses[0]?.examples?.[0]?.translation || "";
+    
+    // First check if examples already exist in the dictionary results
+    let example = word.senses[0]?.examples?.[0]?.text || "";
+    let exampleTranslation = word.senses[0]?.examples?.[0]?.translation || "";
+    
+    // If no examples in dictionary response, fetch from Tatoeba API
+    if (!example && front) {
+      try {
+        setIsFetchingExamples(true);
+        const response = await fetch(`/api/examples?word=${encodeURIComponent(front)}`);
+        if (response.ok) {
+          const examples = await response.json();
+          if (examples && examples.length > 0) {
+            example = examples[0].text;
+            exampleTranslation = examples[0].translation;
+            
+            // Notify user that an example was automatically added
+            toast({
+              title: "Example added",
+              description: "An example sentence was automatically found and added to your card.",
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch example sentences:", error);
+        // Continue without examples if fetching fails
+      } finally {
+        setIsFetchingExamples(false);
+      }
+    }
 
     const cardData = {
       deckId: parseInt(selectedDeckId),
@@ -162,13 +191,13 @@ const AddToDeckModal = ({ isOpen, onClose, word }: AddToDeckModalProps) => {
           </Button>
           <Button 
             onClick={handleAddCard} 
-            disabled={!selectedDeckId || addCardMutation.isPending}
+            disabled={!selectedDeckId || addCardMutation.isPending || isFetchingExamples}
             className="bg-blue-600 hover:bg-blue-700"
           >
-            {addCardMutation.isPending ? (
+            {addCardMutation.isPending || isFetchingExamples ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Adding...
+                {isFetchingExamples ? "Finding examples..." : "Adding..."}
               </>
             ) : (
               "Add Card"
