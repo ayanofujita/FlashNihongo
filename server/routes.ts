@@ -452,29 +452,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Word parameter is required' });
       }
       
-      // Fetch example sentences from Tatoeba API
-      const response = await fetch(`https://tatoeba.org/eng/api_v0/search?from=jpn&to=eng&query=${encodeURIComponent(word)}`);
+      console.log(`Fetching example sentences for word: ${word}`);
+      
+      // Fetch example sentences from Tatoeba API (using the correct /en/ path)
+      const response = await fetch(`https://tatoeba.org/en/api_v0/search?from=jpn&to=eng&query=${encodeURIComponent(word)}`);
       
       if (!response.ok) {
         throw new Error(`Tatoeba API responded with status: ${response.status}`);
       }
       
       const data = await response.json();
+      console.log(`Tatoeba API response received with ${data.results ? data.results.length : 0} results`);
+      
+      if (!data.results || !Array.isArray(data.results)) {
+        console.error('Unexpected API response format:', data);
+        return res.json([]);
+      }
       
       // Format and limit the examples
-      const examples = data.results
-        .filter((result: any) => 
-          result.text && 
-          result.translations && 
-          result.translations.length > 0 && 
-          result.translations[0].text
-        )
-        .slice(0, 5)
-        .map((result: any) => ({
-          text: result.text,
-          translation: result.translations[0].text
-        }));
+      const examples = [];
       
+      for (const result of data.results.slice(0, 10)) {
+        if (result.text && result.translations && result.translations.length > 0) {
+          const englishTranslations = result.translations[0].filter((t: any) => t.lang === 'eng');
+          
+          if (englishTranslations && englishTranslations.length > 0) {
+            examples.push({
+              text: result.text,
+              translation: englishTranslations[0].text
+            });
+            
+            if (examples.length >= 5) break;
+          }
+        }
+      }
+      
+      console.log(`Returning ${examples.length} formatted examples`);
       res.json(examples);
     } catch (error) {
       console.error('Error fetching example sentences:', error);

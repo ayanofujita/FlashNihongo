@@ -157,20 +157,38 @@ const DeckViewPage = () => {
             // Check if card has additional details to show
             const hasAdditionalDetails = card.example || card.exampleTranslation;
             
-            // Generate simplified back content
+            // Generate back content that matches the study mode format
             const backContent = (
               <div className="flex flex-col space-y-3">
-                <div className="text-xl font-medium">{card.back}</div>
+                <div className="text-4xl font-jp font-medium text-gray-800 mb-3">
+                  {card.front}
+                </div>
+                <div className="font-medium text-gray-800 text-xl mb-2">
+                  {card.back}
+                </div>
+                <div className="text-gray-600 text-sm mb-3">
+                  {card.partOfSpeech && card.reading ? 
+                    `${card.partOfSpeech}, ${card.reading}` : 
+                    card.partOfSpeech || card.reading}
+                </div>
                 
-                {card.reading && (
-                  <div className="text-base text-gray-600">
-                    {card.reading}
-                  </div>
-                )}
-                
-                {card.partOfSpeech && (
-                  <div className="text-sm text-gray-500">
-                    {card.partOfSpeech}
+                {(card.example || card.exampleTranslation) && (
+                  <div className="mt-4 border-t pt-3">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-xs font-medium text-gray-500">Example</span>
+                    </div>
+                    <div className="bg-gray-50 rounded-md p-3">
+                      {card.example && (
+                        <div className="text-gray-800 font-jp text-sm mb-1">
+                          {card.example}
+                        </div>
+                      )}
+                      {card.exampleTranslation && (
+                        <div className="text-gray-600 italic text-sm">
+                          {card.exampleTranslation}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

@@ -23,28 +23,29 @@ const Flashcard = ({
   resetToFront = false
 }: FlashcardProps) => {
   const [flipped, setFlipped] = useState(autoFlip);
-  const [cardHeight, setCardHeight] = useState<number>(320); // min-h-80 = 320px
+  const [cardHeight, setCardHeight] = useState<number>(400); // Fixed height for all cards
   const frontCardRef = useRef<HTMLDivElement>(null);
   const backCardRef = useRef<HTMLDivElement>(null);
 
-  // Calculate the maximum height between front and back cards to ensure equal height
+  // Using a fixed height for all cards to ensure consistency
+  // This is intentionally commented out as we're using a fixed height
+  /*
   useEffect(() => {
     const updateCardHeight = () => {
       if (frontCardRef.current && backCardRef.current) {
         const frontHeight = frontCardRef.current.scrollHeight;
         const backHeight = backCardRef.current.scrollHeight;
-        const maxHeight = Math.max(frontHeight, backHeight, 320); // minimum 320px (min-h-80)
+        const maxHeight = Math.max(frontHeight, backHeight, 320);
         setCardHeight(maxHeight);
       }
     };
 
-    // Update on mount and when content changes
     updateCardHeight();
-    // Add a small delay to make sure content is fully rendered
     const timer = setTimeout(updateCardHeight, 100);
     
     return () => clearTimeout(timer);
   }, [front, back]);
+  */
 
   // Reset to front side when a card changes
   useEffect(() => {
