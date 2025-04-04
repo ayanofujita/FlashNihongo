@@ -1,4 +1,3 @@
-import * as React from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -20,7 +19,7 @@ import { UserProvider } from "@/components/auth/UserContext";
 
 // Update Notification Component
 function UpdateNotification() {
-  const { toast, dismiss } = useToast();
+  const { toast } = useToast();
   const [updateToastId, setUpdateToastId] = useState<string | null>(null);
   const [hasCheckedUpdate, setHasCheckedUpdate] = useState(false);
 
@@ -40,7 +39,7 @@ function UpdateNotification() {
           
           // If there's an update toast showing, dismiss it
           if (updateToastId) {
-            dismiss(updateToastId);
+            toast.dismiss(updateToastId);
           }
         }
       });
@@ -50,7 +49,7 @@ function UpdateNotification() {
         if (registration && registration.waiting) {
           // There's a new version waiting - show toast only if update not already applied
           if (!updateApplied) {
-            const result = toast({
+            const id = toast({
               title: "New version available!",
               description: "Refresh to update to the latest version.",
               action: (
@@ -75,8 +74,8 @@ function UpdateNotification() {
               duration: 0, // Don't auto-dismiss
             });
             
-            // Store the toast ID as a string so we can dismiss it if needed
-            setUpdateToastId(typeof result === 'object' && result.id ? result.id : null);
+            // Store the toast ID so we can dismiss it if needed
+            setUpdateToastId(id);
           }
         }
         
