@@ -49,20 +49,12 @@ interface StudyModeProps {
 
 // SRS algorithm constants
 const SRS = {
-  // Default intervals for new cards
-  NEW_CARD: {
+  // Intervals and factors
+  INTERVAL: {
     AGAIN: 0.1,   // ~2.4 hours
     HARD: 0.5,    // ~12 hours
     GOOD: 1,      // 1 day
     EASY: 2,      // 2 days
-  },
-  
-  // Multipliers for review cards
-  REVIEW: {
-    AGAIN: 0.1,   // Reset to ~2.4 hours regardless of current interval
-    HARD: 0.5,    // Multiply current interval by 0.5
-    GOOD: 1,      // Use current interval * ease factor
-    EASY: 2,      // Multiple current interval * ease factor * 2
   },
   
   // Ease adjustment values
@@ -227,10 +219,12 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
 
   // Helper function to parse an interval (could be string or number)
   const parseInterval = (interval: string | number | undefined): number => {
-    if (interval === undefined) return SRS.NEW_CARD.GOOD; // Default to 1 day
+    if (interval === undefined) return SRS.INTERVAL.GOOD; // Default to 1 day
     
     if (typeof interval === 'string') {
-      return parseFloat(interval);
+      // Convert to number and handle potential NaN situations
+      const parsed = parseFloat(interval);
+      return isNaN(parsed) ? SRS.INTERVAL.GOOD : parsed;
     }
     
     return interval;
@@ -249,26 +243,24 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     let interval: number;
     const baseInterval = parseInterval(existingProgress?.interval);
     
-    // First review or "again" rating 
-    if (isFirstReview || rating === "again") {
-      // Use the new card SRS values
+    // The "again" option always resets to a fixed interval
+    if (rating === "again") {
+      interval = SRS.INTERVAL.AGAIN;
+    }
+    // For first reviews of new cards
+    else if (isFirstReview) {
       switch(rating) {
-        case "again": interval = SRS.NEW_CARD.AGAIN; break;
-        case "hard": interval = SRS.NEW_CARD.HARD; break;
-        case "good": interval = SRS.NEW_CARD.GOOD; break;
-        case "easy": interval = SRS.NEW_CARD.EASY; break;
+        case "hard": interval = SRS.INTERVAL.HARD; break;
+        case "good": interval = SRS.INTERVAL.GOOD; break; 
+        case "easy": interval = SRS.INTERVAL.EASY; break;
       }
     }
-    // Subsequent reviews - apply SRS formula
+    // Subsequent reviews - apply SRS formula with ease factor
     else {
       switch(rating) {
-        case "again":
-          // For "again" responses, reset to the beginning
-          interval = SRS.REVIEW.AGAIN;
-          break;
         case "hard":
           // For "hard" responses, multiply current interval by hard factor
-          interval = baseInterval * SRS.REVIEW.HARD;
+          interval = baseInterval * SRS.INTERVAL.HARD * easeMultiplier;
           break;
         case "good":
           // For "good" responses, apply ease factor to current interval
@@ -276,7 +268,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
           break;
         case "easy":
           // For "easy" responses, apply ease factor and easy bonus
-          interval = baseInterval * easeMultiplier * SRS.REVIEW.EASY;
+          interval = baseInterval * easeMultiplier * SRS.INTERVAL.EASY;
           break;
       }
     }
@@ -717,17 +709,26 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
                     </div>
                     {currentCard.example && (
                       <div className="mt-4 border-t pt-3">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-xs font-medium text-gray-500">Example</span>
-                        </div>
-                        <div className="bg-gray-50 rounded-md p-3">
-                          <div className="text-gray-800 font-jp text-sm mb-1">
-                            {currentCard.example}
-                          </div>
-                          <div className="text-gray-600 italic text-sm">
-                            {currentCard.exampleTranslation}
-                          </div>
-                        </div>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="w-full">
+                              <span className="text-xs">Show Example</span>
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Example Sentence</DialogTitle>
+                            </DialogHeader>
+                            <div className="bg-gray-50 rounded-md p-3">
+                              <div className="text-gray-800 font-jp text-lg mb-2">
+                                {currentCard.example}
+                              </div>
+                              <div className="text-gray-600 italic">
+                                {currentCard.exampleTranslation}
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
                       </div>
                     )}
                   </>
