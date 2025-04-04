@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -20,6 +20,7 @@ import { Settings, X, Shuffle, ArrowDownUp } from "lucide-react";
 import StudyCard from "./StudyCard";
 import { useLocation } from "wouter";
 import { useUser } from "@/components/auth/UserContext";
+import CardDetailsModal from "@/components/deck/CardDetailsModal";
 
 interface Card {
   id: number;
@@ -51,22 +52,22 @@ interface StudyModeProps {
 const SRS = {
   // Intervals and factors
   INTERVAL: {
-    AGAIN: 0.1,   // ~2.4 hours
-    HARD: 0.5,    // ~12 hours
-    GOOD: 1,      // 1 day
-    EASY: 2,      // 2 days
+    AGAIN: 0.1, // ~2.4 hours
+    HARD: 0.5, // ~12 hours
+    GOOD: 1, // 1 day
+    EASY: 2, // 2 days
   },
-  
+
   // Ease adjustment values
   EASE: {
-    DEFAULT: 250,  // Default ease factor (250%)
-    MIN: 130,      // Minimum ease factor (130%)
-    MAX: 370,      // Maximum ease factor (370%)
+    DEFAULT: 250, // Default ease factor (250%)
+    MIN: 130, // Minimum ease factor (130%)
+    MAX: 370, // Maximum ease factor (370%)
     AGAIN_STEP: 20, // Ease reduction for Again
-    HARD_STEP: 15,  // Ease reduction for Hard
-    EASY_STEP: 15,  // Ease increase for Easy
-  }
-}
+    HARD_STEP: 15, // Ease reduction for Hard
+    EASY_STEP: 15, // Ease increase for Easy
+  },
+};
 
 const StudyMode = ({ deckId }: StudyModeProps) => {
   const [, navigate] = useLocation();
@@ -84,11 +85,12 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
 
   // Track the current card being studied (store the full card not just the index)
   const [currentCard, setCurrentCard] = useState<Card | null>(null);
-  
+
   // Settings state
   const [isShuffled, setIsShuffled] = useState<boolean>(false);
   const [intervalModifier, setIntervalModifier] = useState<number>(1);
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
+  const [cardDetailsOpen, setCardDetailsOpen] = useState<boolean>(false);
 
   // Reset state when deck ID changes
   useEffect(() => {
@@ -96,6 +98,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     setCardsToStudy([]);
     setCurrentCard(null);
     setUniqueCardIds(new Set());
+    setCardDetailsOpen(false);
   }, [deckId]);
 
   const { data: deck, isLoading: isDeckLoading } = useQuery<Deck>({
@@ -220,44 +223,55 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
   // Helper function to parse an interval (could be string or number)
   const parseInterval = (interval: string | number | undefined): number => {
     if (interval === undefined) return SRS.INTERVAL.GOOD; // Default to 1 day
-    
-    if (typeof interval === 'string') {
+
+    if (typeof interval === "string") {
       // Convert to number and handle potential NaN situations
       const parsed = parseFloat(interval);
       return isNaN(parsed) ? SRS.INTERVAL.GOOD : parsed;
     }
-    
+
     return interval;
   };
-  
+
   // Helper function to calculate new interval based on progress and rating
   const calculateInterval = (
     rating: "again" | "hard" | "good" | "easy",
     existingProgress: any,
-    modifier: number = 1
+    modifier: number = 1,
   ): number => {
-    const isFirstReview = !existingProgress || !existingProgress.reviews || existingProgress.reviews <= 0;
+    const isFirstReview =
+      !existingProgress ||
+      !existingProgress.reviews ||
+      existingProgress.reviews <= 0;
     const ease = existingProgress?.ease || SRS.EASE.DEFAULT;
     const easeMultiplier = ease / 100;
-    
+
     let interval: number;
     const baseInterval = parseInterval(existingProgress?.interval);
-    
-    // The "again" option always resets to a fixed interval
-    if (rating === "again") {
-      interval = SRS.INTERVAL.AGAIN;
-    }
+
     // For first reviews of new cards
-    else if (isFirstReview) {
-      switch(rating) {
-        case "hard": interval = SRS.INTERVAL.HARD; break;
-        case "good": interval = SRS.INTERVAL.GOOD; break; 
-        case "easy": interval = SRS.INTERVAL.EASY; break;
+    if (isFirstReview) {
+      switch (rating) {
+        case "again":
+          interval = SRS.INTERVAL.AGAIN;
+          break;
+        case "hard":
+          interval = SRS.INTERVAL.HARD;
+          break;
+        case "good":
+          interval = SRS.INTERVAL.GOOD;
+          break;
+        case "easy":
+          interval = SRS.INTERVAL.EASY;
+          break;
       }
     }
     // Subsequent reviews - apply SRS formula with ease factor
     else {
-      switch(rating) {
+      switch (rating) {
+        case "again":
+          interval = baseInterval * SRS.INTERVAL.AGAIN * easeMultiplier;
+          break;
         case "hard":
           // For "hard" responses, multiply current interval by hard factor
           interval = baseInterval * SRS.INTERVAL.HARD * easeMultiplier;
@@ -268,21 +282,21 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
           break;
         case "easy":
           // For "easy" responses, apply ease factor and easy bonus
-          interval = baseInterval * easeMultiplier * SRS.INTERVAL.EASY;
+          interval = baseInterval * SRS.INTERVAL.EASY * easeMultiplier;
           break;
       }
     }
-    
+
     // Apply user's interval modifier
     return interval * modifier;
   };
-  
+
   // Helper function to adjust ease based on rating
   const calculateEase = (
     rating: "again" | "hard" | "good" | "easy",
-    currentEase: number = SRS.EASE.DEFAULT
+    currentEase: number = SRS.EASE.DEFAULT,
   ): number => {
-    switch(rating) {
+    switch (rating) {
       case "again":
         // Decrease ease more for again responses
         return Math.max(SRS.EASE.MIN, currentEase - SRS.EASE.AGAIN_STEP);
@@ -297,8 +311,8 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
         return Math.min(SRS.EASE.MAX, currentEase + SRS.EASE.EASY_STEP);
     }
   };
-  
-  // Mutation to update study progress 
+
+  // Mutation to update study progress
   const updateProgress = useMutation({
     mutationFn: async ({
       cardId,
@@ -311,8 +325,15 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
         throw new Error("User not authenticated");
       }
       const userId = user.id;
-      
-      console.log("UPDATING PROGRESS - Card ID:", cardId, "User ID:", userId, "Rating:", rating);
+
+      console.log(
+        "UPDATING PROGRESS - Card ID:",
+        cardId,
+        "User ID:",
+        userId,
+        "Rating:",
+        rating,
+      );
 
       // First get existing progress if any to properly increment reviews/lapses
       let existingProgress = null;
@@ -322,27 +343,34 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
         );
         if (response.ok) {
           existingProgress = await response.json();
-          console.log('EXISTING PROGRESS:', JSON.stringify(existingProgress, null, 2));
+          console.log(
+            "EXISTING PROGRESS:",
+            JSON.stringify(existingProgress, null, 2),
+          );
         }
       } catch (error) {
         console.error("Failed to fetch existing progress:", error);
       }
-      
+
       // Calculate new values using our helper functions
       const reviews = (existingProgress?.reviews || 0) + 1;
       let lapses = existingProgress?.lapses || 0;
-      
+
       // Increment lapses counter for "again" responses
       if (rating === "again") {
         lapses += 1;
       }
-      
+
       // Calculate the new ease factor
       const ease = calculateEase(rating, existingProgress?.ease);
-      
+
       // Calculate the new interval
-      const interval = calculateInterval(rating, existingProgress, intervalModifier);
-      
+      const interval = calculateInterval(
+        rating,
+        existingProgress,
+        intervalModifier,
+      );
+
       // Calculate next review date based on the interval in days
       const now = new Date();
       const nextReview = new Date(
@@ -379,26 +407,29 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
   // Function to shuffle cards
   const handleShuffleCards = () => {
     if (!cardsToStudy.length) return;
-    
+
     // Create a copy and only shuffle cards that haven't been completed yet
     const remainingCards = cardsToStudy.filter(
-      card => !completed.includes(card.id)
+      (card) => !completed.includes(card.id),
     );
-    
+
     // Shuffle the array using Fisher-Yates algorithm
     for (let i = remainingCards.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [remainingCards[i], remainingCards[j]] = [remainingCards[j], remainingCards[i]];
+      [remainingCards[i], remainingCards[j]] = [
+        remainingCards[j],
+        remainingCards[i],
+      ];
     }
-    
+
     // Update state with shuffled cards
     const newCardsToStudy = [
-      ...cardsToStudy.filter(card => completed.includes(card.id)),
-      ...remainingCards
+      ...cardsToStudy.filter((card) => completed.includes(card.id)),
+      ...remainingCards,
     ];
-    
+
     setCardsToStudy(newCardsToStudy);
-    
+
     // Update current card if we have remaining cards
     if (remainingCards.length > 0 && !currentCard) {
       setCurrentCard(remainingCards[0]);
@@ -406,32 +437,32 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       // Update to the first card in the shuffled deck
       setCurrentCard(remainingCards[0]);
     }
-    
+
     setIsShuffled(true);
-    
+
     toast({
       title: "Cards Shuffled",
       description: "Your cards have been randomly shuffled.",
     });
   };
-  
+
   // Function to unshuffle cards (restore original order)
   const handleUnshuffleCards = () => {
     if (!dueCards || !cardsToStudy.length) return;
-    
+
     // Restore original order from dueCards
     const filteredDueCards = dueCards.filter(
-      card => !completed.includes(card.id)
+      (card) => !completed.includes(card.id),
     );
-    
+
     // We need to keep completed cards in our study deck
     const newCardsToStudy = [
-      ...cardsToStudy.filter(card => completed.includes(card.id)),
-      ...filteredDueCards
+      ...cardsToStudy.filter((card) => completed.includes(card.id)),
+      ...filteredDueCards,
     ];
-    
+
     setCardsToStudy(newCardsToStudy);
-    
+
     // Update current card if we have remaining cards
     if (filteredDueCards.length > 0 && !currentCard) {
       setCurrentCard(filteredDueCards[0]);
@@ -439,9 +470,9 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       // Update to the first card in the ordered deck
       setCurrentCard(filteredDueCards[0]);
     }
-    
+
     setIsShuffled(false);
-    
+
     toast({
       title: "Cards Unshuffled",
       description: "Your cards have been restored to their original order.",
@@ -516,7 +547,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
   const formatInterval = (interval: number): string => {
     // Apply the interval modifier to show accurate predictions
     const adjustedInterval = interval * intervalModifier;
-    
+
     // Convert to hours
     const hours = Math.round(adjustedInterval * 24);
 
@@ -533,12 +564,20 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
   };
 
   // Function to display the interval for a rating button
-  const getIntervalText = (rating: "again" | "hard" | "good" | "easy"): string => {
+  const getIntervalText = (
+    rating: "again" | "hard" | "good" | "easy",
+  ): string => {
     // Get the current card's existing progress if any
-    const existingProgress = currentCard ? dueCards?.find(c => c.id === currentCard.id) : null;
-    
+    const existingProgress = currentCard
+      ? dueCards?.find((c) => c.id === currentCard.id)
+      : null;
+
     // Calculate the interval using our helper function and format it
-    const interval = calculateInterval(rating, existingProgress, intervalModifier);
+    const interval = calculateInterval(
+      rating,
+      existingProgress,
+      intervalModifier,
+    );
     return formatInterval(interval);
   };
 
@@ -613,16 +652,23 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
               </DialogHeader>
               <div className="py-4 space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="intervalModifier" className="text-sm font-medium flex justify-between">
-                    <span>Interval Modifier: {intervalModifier.toFixed(1)}x</span>
-                    <span className="text-xs text-gray-500">(Affects spacing between reviews)</span>
+                  <Label
+                    htmlFor="intervalModifier"
+                    className="text-sm font-medium flex justify-between"
+                  >
+                    <span>
+                      Interval Modifier: {intervalModifier.toFixed(1)}x
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      (Affects spacing between reviews)
+                    </span>
                   </Label>
-                  <Slider 
+                  <Slider
                     id="intervalModifier"
-                    value={[intervalModifier]} 
-                    min={0.5} 
-                    max={2.0} 
-                    step={0.1} 
+                    value={[intervalModifier]}
+                    min={0.5}
+                    max={2.0}
+                    step={0.1}
                     onValueChange={(value) => setIntervalModifier(value[0])}
                     className="my-4"
                   />
@@ -632,14 +678,21 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
                     <span>Longer</span>
                   </div>
                   <div className="text-xs text-gray-500 mt-2 bg-gray-50 p-2 rounded">
-                    <p className="mb-1"><strong>How this works:</strong></p>
+                    <p className="mb-1">
+                      <strong>How this works:</strong>
+                    </p>
                     <p>• Lower values (0.5x): Cards appear more frequently</p>
                     <p>• Default (1.0x): Standard spacing</p>
-                    <p>• Higher values (2.0x): Longer intervals between reviews</p>
-                    <p className="mt-1">This setting affects all cards, including those you've previously studied.</p>
+                    <p>
+                      • Higher values (2.0x): Longer intervals between reviews
+                    </p>
+                    <p className="mt-1">
+                      This setting affects all cards, including those you've
+                      previously studied.
+                    </p>
                   </div>
                 </div>
-                
+
                 <div className="flex justify-center space-x-3 pt-2">
                   <Button
                     variant={isShuffled ? "outline" : "secondary"}
@@ -664,7 +717,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          
+
           <Button
             variant="outline"
             className="flex items-center"
@@ -707,28 +760,19 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
                     <div className="text-gray-600 text-sm mb-3">
                       {currentCard.partOfSpeech}, {currentCard.reading}
                     </div>
-                    {currentCard.example && (
-                      <div className="mt-4 border-t pt-3">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="w-full">
-                              <span className="text-xs">Show Example</span>
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Example Sentence</DialogTitle>
-                            </DialogHeader>
-                            <div className="bg-gray-50 rounded-md p-3">
-                              <div className="text-gray-800 font-jp text-lg mb-2">
-                                {currentCard.example}
-                              </div>
-                              <div className="text-gray-600 italic">
-                                {currentCard.exampleTranslation}
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
+                    {(currentCard.example || currentCard.exampleTranslation) && (
+                      <div className="mt-4 border-t pt-3 flex justify-end">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8 rounded-full bg-white"
+                          onClick={() => setCardDetailsOpen(true)}
+                        >
+                          <span className="sr-only">View Example</span>
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-blue-600">
+                            <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </Button>
                       </div>
                     )}
                   </>
@@ -838,6 +882,23 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
           </div>
         </div>
       )}
+
+      {/* Card Details Modal */}
+      <CardDetailsModal
+        isOpen={cardDetailsOpen}
+        onClose={() => setCardDetailsOpen(false)}
+        card={currentCard ? {
+          id: currentCard.id,
+          front: currentCard.front,
+          back: currentCard.back,
+          reading: currentCard.reading,
+          partOfSpeech: currentCard.partOfSpeech,
+          example: currentCard.example,
+          exampleTranslation: currentCard.exampleTranslation
+        } : null}
+        onEdit={() => {}} // Not editing from study mode
+        onDelete={() => {}} // Not deleting from study mode
+      />
     </div>
   );
 };
