@@ -715,14 +715,19 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
                       {currentCard.partOfSpeech}, {currentCard.reading}
                     </div>
                     {currentCard.example && (
-                      <>
-                        <div className="text-gray-600 italic text-sm">
-                          {currentCard.example}
+                      <div className="mt-4 border-t pt-3">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-xs font-medium text-gray-500">Example</span>
                         </div>
-                        <div className="text-gray-600 italic text-sm">
-                          {currentCard.exampleTranslation}
+                        <div className="bg-gray-50 rounded-md p-3">
+                          <div className="text-gray-800 font-jp text-sm mb-1">
+                            {currentCard.example}
+                          </div>
+                          <div className="text-gray-600 italic text-sm">
+                            {currentCard.exampleTranslation}
+                          </div>
                         </div>
-                      </>
+                      </div>
                     )}
                   </>
                 }

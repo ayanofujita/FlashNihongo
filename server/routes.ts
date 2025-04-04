@@ -288,8 +288,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have permission to add cards to this deck" });
       }
 
-      const newCard = await storage.createCard(validation.data);
-      res.status(201).json(newCard);
+      try {
+        const newCard = await storage.createCard(validation.data);
+        res.status(201).json(newCard);
+      } catch (cardError: any) {
+        // Check if this is a duplicate card error
+        if (cardError.message && cardError.message.includes("already exists")) {
+          return res.status(409).json({ 
+            message: "Duplicate card", 
+            error: cardError.message 
+          });
+        }
+        throw cardError; // Re-throw if it's not a duplicate error
+      }
     } catch (error) {
       console.error("Error creating card:", error);
       res.status(500).json({ message: "Failed to create card" });
@@ -430,6 +441,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(results);
     } catch (error) {
       res.status(500).json({ message: "Failed to search dictionary" });
+    }
+  });
+  
+  // Example sentences API (using Tatoeba)
+  app.get("/api/examples", async (req, res) => {
+    try {
+      const word = req.query.word as string;
+      if (!word) {
+        return res.status(400).json({ error: 'Word parameter is required' });
+      }
+      
+      // Fetch example sentences from Tatoeba API
+      const response = await fetch(`https://tatoeba.org/eng/api_v0/search?from=jpn&to=eng&query=${encodeURIComponent(word)}`);
+      
+      if (!response.ok) {
+        throw new Error(`Tatoeba API responded with status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Format and limit the examples
+      const examples = data.results
+        .filter((result: any) => 
+          result.text && 
+          result.translations && 
+          result.translations.length > 0 && 
+          result.translations[0].text
+        )
+        .slice(0, 5)
+        .map((result: any) => ({
+          text: result.text,
+          translation: result.translations[0].text
+        }));
+      
+      res.json(examples);
+    } catch (error) {
+      console.error('Error fetching example sentences:', error);
+      res.status(500).json({ error: 'Failed to fetch example sentences' });
     }
   });
 

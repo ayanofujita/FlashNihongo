@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2, Search } from "lucide-react";
 
 const formSchema = z.object({
   front: z.string().min(1, "Front side is required"),
@@ -41,6 +42,7 @@ interface CardFormProps {
 
 const CardForm = ({ deckId, cardId, defaultValues, onSuccess }: CardFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFetchingExamples, setIsFetchingExamples] = useState(false);
   const { toast } = useToast();
   const isEditMode = !!cardId;
 
@@ -55,6 +57,53 @@ const CardForm = ({ deckId, cardId, defaultValues, onSuccess }: CardFormProps) =
       exampleTranslation: "",
     }
   });
+
+  const fetchExamples = async () => {
+    const japaneseWord = form.getValues("front");
+    
+    if (!japaneseWord) {
+      toast({
+        title: "Input needed",
+        description: "Please enter a Japanese word first.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsFetchingExamples(true);
+    try {
+      const response = await fetch(`/api/examples?word=${encodeURIComponent(japaneseWord)}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch examples");
+      }
+      
+      const examples = await response.json();
+      
+      if (examples && examples.length > 0) {
+        // Select the first example
+        form.setValue("example", examples[0].text);
+        form.setValue("exampleTranslation", examples[0].translation);
+        
+        toast({
+          title: "Examples found",
+          description: "Added an example sentence to your card.",
+        });
+      } else {
+        toast({
+          title: "No examples found",
+          description: "No example sentences were found for this word.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch example sentences.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsFetchingExamples(false);
+    }
+  };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
@@ -85,12 +134,21 @@ const CardForm = ({ deckId, cardId, defaultValues, onSuccess }: CardFormProps) =
       // Invalidate queries to refresh the data
       queryClient.invalidateQueries({ queryKey: [`/api/decks/${deckId}/cards`] });
       if (onSuccess) onSuccess();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: isEditMode ? "Failed to update card." : "Failed to create card.",
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      // Check for duplicate card error (HTTP 409 conflict)
+      if (error.status === 409) {
+        toast({
+          title: "Duplicate card",
+          description: "This card already exists in the deck. Please use a different front text.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: isEditMode ? "Failed to update card." : "Failed to create card.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -158,33 +216,59 @@ const CardForm = ({ deckId, cardId, defaultValues, onSuccess }: CardFormProps) =
             )}
           />
           
-          <FormField
-            control={form.control}
-            name="example"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Example Sentence (Optional)</FormLabel>
-                <FormControl>
-                  <Textarea placeholder="例: 私は毎日りんごを食べます。" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="exampleTranslation"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Example Translation (Optional)</FormLabel>
-                <FormControl>
-                  <Textarea placeholder="例: I eat an apple every day." {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <div className="text-sm font-medium">Example Sentences</div>
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                onClick={fetchExamples}
+                disabled={isFetchingExamples}
+                className="flex items-center gap-1 text-xs"
+              >
+                {isFetchingExamples ? (
+                  <>
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Finding examples...
+                  </>
+                ) : (
+                  <>
+                    <Search className="h-3 w-3" />
+                    Find examples
+                  </>
+                )}
+              </Button>
+            </div>
+            
+            <FormField
+              control={form.control}
+              name="example"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Example Sentence (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="例: 私は毎日りんごを食べます。" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="exampleTranslation"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Example Translation (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="例: I eat an apple every day." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
         
         <div className="flex justify-end">
