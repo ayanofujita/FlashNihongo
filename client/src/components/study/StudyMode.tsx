@@ -467,16 +467,66 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       return `${days}d`;
     };
 
-    // For the first review, show values with the modifier applied
-    switch (rating) {
-      case "again":
-        return formatInterval(AGAIN_INTERVAL);
-      case "hard":
-        return formatInterval(HARD_INTERVAL_FACTOR);
-      case "good":
-        return formatInterval(INITIAL_INTERVAL);
-      case "easy":
-        return formatInterval(INITIAL_INTERVAL * EASY_BONUS);
+    // Get the current card's existing progress if any
+    const existingProgress = currentCard ? dueCards?.find(c => c.id === currentCard.id) : null;
+    const isReviewed = !!existingProgress;
+
+    // For new cards without review history, show initial intervals
+    if (!isReviewed) {
+      switch (rating) {
+        case "again":
+          return formatInterval(AGAIN_INTERVAL);
+        case "hard":
+          return formatInterval(HARD_INTERVAL_FACTOR);
+        case "good":
+          return formatInterval(INITIAL_INTERVAL);
+        case "easy":
+          return formatInterval(INITIAL_INTERVAL * EASY_BONUS);
+      }
+    } 
+    // For cards being reviewed (not the first time)
+    else {
+      let baseInterval = 1; // Default to 1 day if we can't determine
+      
+      try {
+        // Attempt to get the current interval from the card data
+        // This is an approximation as we don't have direct access to study_progress here
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        // Try to estimate current interval from last review date if available
+        // (This is an approximation and would work better with direct study_progress access)
+        baseInterval = INITIAL_INTERVAL; // Fallback to the initial interval
+        
+        switch (rating) {
+          case "again":
+            return formatInterval(AGAIN_INTERVAL) + " → ...";
+          case "hard":
+            // Hard reduces the interval
+            return formatInterval(baseInterval * HARD_INTERVAL_FACTOR) + " → ...";
+          case "good":
+            // Good keeps same interval but applies ease factor next time
+            const goodNextInterval = baseInterval * 2.5 * intervalModifier;
+            return formatInterval(baseInterval) + " → " + formatInterval(goodNextInterval);
+          case "easy":
+            // Easy multiplies the interval by the bonus factor
+            const easyNextInterval = baseInterval * EASY_BONUS * 2.5 * intervalModifier;
+            return formatInterval(baseInterval * EASY_BONUS) + " → " + formatInterval(easyNextInterval);
+        }
+      } catch (error) {
+        console.error("Error calculating review interval:", error);
+        // Fallback to simple interval
+        switch (rating) {
+          case "again":
+            return formatInterval(AGAIN_INTERVAL);
+          case "hard":
+            return formatInterval(HARD_INTERVAL_FACTOR);
+          case "good":
+            return formatInterval(INITIAL_INTERVAL);
+          case "easy":
+            return formatInterval(INITIAL_INTERVAL * EASY_BONUS);
+        }
+      }
     }
   };
 
@@ -568,6 +618,13 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
                     <span>Shorter</span>
                     <span>Default</span>
                     <span>Longer</span>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-2 bg-gray-50 p-2 rounded">
+                    <p className="mb-1"><strong>How this works:</strong></p>
+                    <p>• Lower values (0.5x): Cards appear more frequently</p>
+                    <p>• Default (1.0x): Standard spacing</p>
+                    <p>• Higher values (2.0x): Longer intervals between reviews</p>
+                    <p className="mt-1">This setting affects all cards, including those you've previously studied.</p>
                   </div>
                 </div>
                 
