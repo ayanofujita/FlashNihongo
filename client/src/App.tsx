@@ -20,7 +20,7 @@ import { UserProvider } from "@/components/auth/UserContext";
 // Update Notification Component
 function UpdateNotification() {
   const { toast } = useToast();
-  const [updateToastId, setUpdateToastId] = useState<string | null>(null);
+  const [updateToast, setUpdateToast] = useState<any>(null);
   const [hasCheckedUpdate, setHasCheckedUpdate] = useState(false);
 
   // Store whether an update has been applied in session storage
@@ -38,8 +38,8 @@ function UpdateNotification() {
           sessionStorage.setItem(updateAppliedKey, 'true');
           
           // If there's an update toast showing, dismiss it
-          if (updateToastId) {
-            toast.dismiss(updateToastId);
+          if (updateToast) {
+            updateToast.dismiss();
           }
         }
       });
@@ -74,8 +74,8 @@ function UpdateNotification() {
               duration: 0, // Don't auto-dismiss
             });
             
-            // Store the toast ID so we can dismiss it if needed
-            setUpdateToastId(id);
+            // Store the toast instance so we can dismiss it if needed
+            setUpdateToast(id);
           }
         }
         

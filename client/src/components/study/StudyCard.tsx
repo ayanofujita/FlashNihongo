@@ -18,7 +18,6 @@ const StudyCard = ({
       front={front}
       back={back}
       resetToFront={resetToFront}
-      actionButton={actionButton}
     />
   );
 };
