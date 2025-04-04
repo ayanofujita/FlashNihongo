@@ -10,6 +10,7 @@ interface FlashcardProps {
   cardNumber?: number;
   totalCards?: number;
   resetToFront?: boolean;
+  actionButton?: React.ReactNode;
 }
 
 const Flashcard = ({ 
@@ -20,7 +21,8 @@ const Flashcard = ({
   autoFlip = false,
   cardNumber,
   totalCards,
-  resetToFront = false
+  resetToFront = false,
+  actionButton
 }: FlashcardProps) => {
   const [flipped, setFlipped] = useState(autoFlip);
   const [cardHeight, setCardHeight] = useState<number>(400); // Fixed height for all cards
@@ -81,6 +83,15 @@ const Flashcard = ({
           className="absolute inset-0 w-full h-full bg-white rounded-xl shadow-lg flex flex-col justify-center items-center p-8 border border-gray-200 overflow-auto"
           style={{ backfaceVisibility: "hidden" }}
         >
+          {/* Action button position on front */}
+          {actionButton && !flipped && (
+            <div 
+              className="absolute top-3 right-3 z-10" 
+              onClick={(e) => e.stopPropagation()}
+            >
+              {actionButton}
+            </div>
+          )}
           <div className="text-center w-full">
             <h3 className="text-gray-500 text-sm uppercase tracking-wide mb-4">Front</h3>
             <div className="text-3xl sm:text-4xl font-jp font-medium text-gray-800 mb-6 break-words overflow-hidden">{front}</div>
@@ -94,6 +105,15 @@ const Flashcard = ({
           className="absolute inset-0 w-full h-full bg-white rounded-xl shadow-lg flex flex-col justify-center items-center p-8 border border-gray-200 rotate-y-180 overflow-auto" 
           style={{ backfaceVisibility: "hidden" }}
         >
+          {/* Action button position on back */}
+          {actionButton && flipped && (
+            <div 
+              className="absolute top-3 right-3 z-10" 
+              onClick={(e) => e.stopPropagation()}
+            >
+              {actionButton}
+            </div>
+          )}
           <div className="text-center w-full">
             <h3 className="text-gray-500 text-sm uppercase tracking-wide mb-4">Back</h3>
             <div className="text-2xl sm:text-3xl font-medium text-gray-800 mb-6 break-words overflow-hidden">{back}</div>
