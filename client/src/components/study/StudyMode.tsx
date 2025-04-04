@@ -48,12 +48,33 @@ interface StudyModeProps {
 }
 
 // SRS algorithm constants
-const INITIAL_INTERVAL = 1; // 1 day for initial interval
-const EASY_BONUS = 2;
-const INTERVAL_MODIFIER = 1;
-const HARD_INTERVAL_FACTOR = 0.5;
-const AGAIN_INTERVAL = 0.1; // ~0.1 days = ~2.4 hours
-const EASE_MODIFIER = 0.15; // How much to adjust ease on each review
+const SRS = {
+  // Default intervals for new cards
+  NEW_CARD: {
+    AGAIN: 0.1,   // ~2.4 hours
+    HARD: 0.5,    // ~12 hours
+    GOOD: 1,      // 1 day
+    EASY: 2,      // 2 days
+  },
+  
+  // Multipliers for review cards
+  REVIEW: {
+    AGAIN: 0.1,   // Reset to ~2.4 hours regardless of current interval
+    HARD: 0.5,    // Multiply current interval by 0.5
+    GOOD: 1,      // Use current interval * ease factor
+    EASY: 2,      // Multiple current interval * ease factor * 2
+  },
+  
+  // Ease adjustment values
+  EASE: {
+    DEFAULT: 250,  // Default ease factor (250%)
+    MIN: 130,      // Minimum ease factor (130%)
+    MAX: 370,      // Maximum ease factor (370%)
+    AGAIN_STEP: 20, // Ease reduction for Again
+    HARD_STEP: 15,  // Ease reduction for Hard
+    EASY_STEP: 15,  // Ease increase for Easy
+  }
+}
 
 const StudyMode = ({ deckId }: StudyModeProps) => {
   const [, navigate] = useLocation();
@@ -204,7 +225,88 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     },
   });
 
-  // Mutation to update study progress
+  // Helper function to parse an interval (could be string or number)
+  const parseInterval = (interval: string | number | undefined): number => {
+    if (interval === undefined) return SRS.NEW_CARD.GOOD; // Default to 1 day
+    
+    if (typeof interval === 'string') {
+      return parseFloat(interval);
+    }
+    
+    return interval;
+  };
+  
+  // Helper function to calculate new interval based on progress and rating
+  const calculateInterval = (
+    rating: "again" | "hard" | "good" | "easy",
+    existingProgress: any,
+    modifier: number = 1
+  ): number => {
+    const isFirstReview = !existingProgress || !existingProgress.reviews || existingProgress.reviews <= 0;
+    const ease = existingProgress?.ease || SRS.EASE.DEFAULT;
+    const easeMultiplier = ease / 100;
+    
+    let interval: number;
+    const baseInterval = parseInterval(existingProgress?.interval);
+    
+    // First review or "again" rating 
+    if (isFirstReview || rating === "again") {
+      // Use the new card SRS values
+      switch(rating) {
+        case "again": interval = SRS.NEW_CARD.AGAIN; break;
+        case "hard": interval = SRS.NEW_CARD.HARD; break;
+        case "good": interval = SRS.NEW_CARD.GOOD; break;
+        case "easy": interval = SRS.NEW_CARD.EASY; break;
+      }
+    }
+    // Subsequent reviews - apply SRS formula
+    else {
+      switch(rating) {
+        case "again":
+          // For "again" responses, reset to the beginning
+          interval = SRS.REVIEW.AGAIN;
+          break;
+        case "hard":
+          // For "hard" responses, multiply current interval by hard factor
+          interval = baseInterval * SRS.REVIEW.HARD;
+          break;
+        case "good":
+          // For "good" responses, apply ease factor to current interval
+          interval = baseInterval * easeMultiplier;
+          break;
+        case "easy":
+          // For "easy" responses, apply ease factor and easy bonus
+          interval = baseInterval * easeMultiplier * SRS.REVIEW.EASY;
+          break;
+      }
+    }
+    
+    // Apply user's interval modifier
+    return interval * modifier;
+  };
+  
+  // Helper function to adjust ease based on rating
+  const calculateEase = (
+    rating: "again" | "hard" | "good" | "easy",
+    currentEase: number = SRS.EASE.DEFAULT
+  ): number => {
+    switch(rating) {
+      case "again":
+        // Decrease ease more for again responses
+        return Math.max(SRS.EASE.MIN, currentEase - SRS.EASE.AGAIN_STEP);
+      case "hard":
+        // Decrease ease for hard responses
+        return Math.max(SRS.EASE.MIN, currentEase - SRS.EASE.HARD_STEP);
+      case "good":
+        // No change for good responses
+        return currentEase;
+      case "easy":
+        // Increase ease for easy responses
+        return Math.min(SRS.EASE.MAX, currentEase + SRS.EASE.EASY_STEP);
+    }
+  };
+  
+  // Mutation to update study progress 
   const updateProgress = useMutation({
     mutationFn: async ({
       cardId,
@@ -217,12 +319,6 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
         throw new Error("User not authenticated");
       }
       const userId = user.id;
-
-      // Calculate new SRS parameters based on rating
-      let interval: number;
-      let ease = 250; // Default ease factor
-      let reviews = 1;
-      let lapses = 0;
       
       console.log("UPDATING PROGRESS - Card ID:", cardId, "User ID:", userId, "Rating:", rating);
 
@@ -234,98 +330,28 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
         );
         if (response.ok) {
           existingProgress = await response.json();
-          reviews = (existingProgress?.reviews || 0) + 1;
-          lapses = existingProgress?.lapses || 0;
-
-          // Use the existing ease if available
-          ease = existingProgress?.ease || ease;
-          
-          // Log the existing progress details
           console.log('EXISTING PROGRESS:', JSON.stringify(existingProgress, null, 2));
         }
       } catch (error) {
         console.error("Failed to fetch existing progress:", error);
       }
-
-      // Base interval calculation on existing progress if available
-      // Make sure to convert the stored interval string to a number
-      let baseInterval = INITIAL_INTERVAL; // Default to initial value
       
-      if (existingProgress?.interval) {
-        // Handle whether interval is stored as a string or number
-        if (typeof existingProgress.interval === 'string') {
-          baseInterval = parseFloat(existingProgress.interval);
-        } else if (typeof existingProgress.interval === 'number') {
-          baseInterval = existingProgress.interval;
-        }
-        console.log('Previous base interval (original):', existingProgress.interval, 'type:', typeof existingProgress.interval);
+      // Calculate new values using our helper functions
+      const reviews = (existingProgress?.reviews || 0) + 1;
+      let lapses = existingProgress?.lapses || 0;
+      
+      // Increment lapses counter for "again" responses
+      if (rating === "again") {
+        lapses += 1;
       }
       
-      console.log('Previous base interval (converted):', baseInterval, 'type:', typeof baseInterval);
+      // Calculate the new ease factor
+      const ease = calculateEase(rating, existingProgress?.ease);
       
-      // Get easeMultiplier for calculations
-      const easeMultiplier = ease / 100;
+      // Calculate the new interval
+      const interval = calculateInterval(rating, existingProgress, intervalModifier);
       
-      // First review or relearning card (pressed again previously)
-      if (reviews <= 1 || rating === "again") {
-        // Adjust ease based on response
-        switch (rating) {
-          case "again":
-            // For "again" responses, reset to beginning
-            interval = AGAIN_INTERVAL;
-            ease = Math.max(130, ease - 20); // Minimum ease 130, decrease by 20
-            lapses += 1; // Increment lapses for "again" responses
-            break;
-          case "hard":
-            // For "hard" responses on new cards
-            interval = HARD_INTERVAL_FACTOR;
-            ease = Math.max(130, ease - 15); // Decrease ease by 15
-            break;
-          case "good":
-            // For "good" responses on new cards
-            interval = INITIAL_INTERVAL;
-            // No change to ease
-            break;
-          case "easy":
-            // For "easy" responses on new cards
-            interval = INITIAL_INTERVAL * EASY_BONUS;
-            ease = Math.min(370, ease + 15); // Increase ease by 15, maximum 370
-            break;
-        }
-        
-        console.log(`INTERVAL CALCULATION - First review: ${interval} days, ease: ${ease}`);
-      } 
-      // Subsequent reviews - apply SRS formula
-      else {
-        switch (rating) {
-          case "again":
-            // This case is already covered above
-            break;
-          case "hard":
-            // For "hard" responses, shorter interval, decrease ease
-            interval = baseInterval * HARD_INTERVAL_FACTOR;
-            ease = Math.max(130, ease - 15); // Decrease ease
-            break;
-          case "good":
-            // For "good" responses, calculate new interval using ease
-            interval = baseInterval * easeMultiplier;
-            // No change to ease
-            break;
-          case "easy":
-            // For "easy" responses, longer interval, increase ease
-            interval = baseInterval * easeMultiplier * EASY_BONUS;
-            ease = Math.min(370, ease + 15); // Increase ease
-            break;
-        }
-        
-        // Apply user's interval modifier
-        interval *= intervalModifier;
-        
-        console.log(`INTERVAL CALCULATION - Review #${reviews}: base=${baseInterval}, new=${interval}, ease=${ease}, modifier=${intervalModifier}`);
-      }
-
       // Calculate next review date based on the interval in days
-      // This ensures cards won't show up until their due date
       const now = new Date();
       const nextReview = new Date(
         now.getTime() + interval * 24 * 60 * 60 * 1000,
@@ -494,104 +520,34 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     }
   };
 
-  const getIntervalText = (rating: "again" | "hard" | "good" | "easy") => {
-    const formatInterval = (interval: number) => {
-      // Apply the interval modifier to show accurate predictions
-      const adjustedInterval = interval * intervalModifier;
-      
-      // Convert to hours
-      const hours = Math.round(adjustedInterval * 24);
+  // Helper function to format an interval for display
+  const formatInterval = (interval: number): string => {
+    // Apply the interval modifier to show accurate predictions
+    const adjustedInterval = interval * intervalModifier;
+    
+    // Convert to hours
+    const hours = Math.round(adjustedInterval * 24);
 
-      // If less than 24 hours, show in hours
-      if (hours < 24) {
-        return `${hours}h`;
-      }
+    // If less than 24 hours, show in hours
+    if (hours < 24) {
+      return `${hours}h`;
+    }
 
-      // Otherwise show in days, only round if not a whole number
-      const days = Number.isInteger(adjustedInterval)
-        ? adjustedInterval
-        : Number(adjustedInterval.toFixed(1));
-      return `${days}d`;
-    };
+    // Otherwise show in days, only round if not a whole number
+    const days = Number.isInteger(adjustedInterval)
+      ? adjustedInterval
+      : Number(adjustedInterval.toFixed(1));
+    return `${days}d`;
+  };
 
+  // Function to display the interval for a rating button
+  const getIntervalText = (rating: "again" | "hard" | "good" | "easy"): string => {
     // Get the current card's existing progress if any
     const existingProgress = currentCard ? dueCards?.find(c => c.id === currentCard.id) : null;
-    const isReviewed = !!(existingProgress && existingProgress.reviews > 0);
-
-    // Extract interval from existing progress and convert to number
-    let currentInterval: number = INITIAL_INTERVAL;
     
-    // Extract ease factor from existing progress
-    let currentEase: number = 250;  // Default ease factor
-    
-    // Extract review count
-    let reviewCount: number = 0;
-    
-    if (existingProgress) {
-      // Parse interval from string or use directly if it's a number
-      if (typeof existingProgress.interval === 'string') {
-        currentInterval = parseFloat(existingProgress.interval || '0');
-      } else if (typeof existingProgress.interval === 'number') {
-        currentInterval = existingProgress.interval;
-      }
-      
-      // Use existing ease factor
-      currentEase = existingProgress.ease || 250;
-      
-      // Get review count
-      reviewCount = existingProgress.reviews || 0;
-      
-      console.log(`Card ${currentCard?.id} progress: interval=${currentInterval}, ease=${currentEase}, reviews=${reviewCount}`);
-    }
-    
-    // Convert ease to a multiplier (divide by 100)
-    const easeMultiplier = currentEase / 100;
-    
-    // For new cards or cards being relearned (no reviews or "again" pressed)
-    if (!isReviewed || rating === "again") {
-      switch (rating) {
-        case "again":
-          return formatInterval(AGAIN_INTERVAL);
-        case "hard":
-          return formatInterval(HARD_INTERVAL_FACTOR);
-        case "good":
-          return formatInterval(INITIAL_INTERVAL);
-        case "easy":
-          return formatInterval(INITIAL_INTERVAL * EASY_BONUS);
-      }
-    } 
-    // For cards being reviewed (not the first time)
-    else {
-      try {
-        switch (rating) {
-          case "again":
-            // The again case is already handled above
-            return formatInterval(AGAIN_INTERVAL);
-          case "hard":
-            // Hard: current_interval * hard_factor * ease / 100
-            return formatInterval(currentInterval * HARD_INTERVAL_FACTOR);
-          case "good":
-            // Good: current_interval * ease / 100
-            return formatInterval(currentInterval * easeMultiplier);
-          case "easy":
-            // Easy: current_interval * ease / 100 * easy_bonus
-            return formatInterval(currentInterval * easeMultiplier * EASY_BONUS);
-        }
-      } catch (error) {
-        console.error("Error calculating review interval:", error);
-        // Fallback to simple interval
-        switch (rating) {
-          case "again":
-            return formatInterval(AGAIN_INTERVAL);
-          case "hard":
-            return formatInterval(HARD_INTERVAL_FACTOR);
-          case "good":
-            return formatInterval(INITIAL_INTERVAL);
-          case "easy":
-            return formatInterval(INITIAL_INTERVAL * EASY_BONUS);
-        }
-      }
-    }
+    // Calculate the interval using our helper function and format it
+    const interval = calculateInterval(rating, existingProgress, intervalModifier);
+    return formatInterval(interval);
   };
 
   if (isDeckLoading || isCardsLoading) {
