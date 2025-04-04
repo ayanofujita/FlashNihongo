@@ -102,7 +102,7 @@ export const studyProgress = pgTable("study_progress", {
   cardId: integer("card_id").references(() => cards.id).notNull(),
   userId: integer("user_id").references(() => users.id).notNull(),
   ease: integer("ease").default(250),
-  interval: numeric("interval", { precision: 5, scale: 2 }).default("0"),
+  interval: numeric("interval", { precision: 5, scale: 2 }).default("0"), // Must use string format for default
   reviews: integer("reviews").default(0),
   lapses: integer("lapses").default(0),
   lastReviewed: timestamp("last_reviewed"),
@@ -121,8 +121,8 @@ export const insertStudyProgressSchema = createInsertSchema(studyProgress)
     nextReview: true,
   })
   .extend({
-    // Allow interval to be either string or number
-    interval: z.union([z.string(), z.number()]).optional(),
+    // Prefer number for interval (with string fallback for backward compatibility)
+    interval: z.number().or(z.string().transform(val => parseFloat(val))).optional(),
   });
 
 export type InsertStudyProgress = z.infer<typeof insertStudyProgressSchema>;

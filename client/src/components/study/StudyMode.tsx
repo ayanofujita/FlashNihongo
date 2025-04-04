@@ -234,13 +234,18 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
   const parseInterval = (interval: string | number | undefined): number => {
     if (interval === undefined) return SRS.INTERVAL.GOOD; // Default to 1 day
 
+    // If it's already a number, just return it
+    if (typeof interval === "number") return interval;
+    
+    // If it's a string, convert it to a number
     if (typeof interval === "string") {
       // Convert to number and handle potential NaN situations
       const parsed = parseFloat(interval);
       return isNaN(parsed) ? SRS.INTERVAL.GOOD : parsed;
     }
 
-    return interval;
+    // Fallback to default value
+    return SRS.INTERVAL.GOOD;
   };
 
   // Helper function to calculate new interval based on progress and rating
@@ -503,8 +508,41 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     }
 
     try {
+      // Get existing progress data to log before update
+      let existingProgress: StudyProgressType | null = null;
+      try {
+        const response = await fetch(
+          `/api/study/progress?userId=${user!.id}&cardId=${currentCard.id}`,
+        );
+        if (response.ok) {
+          existingProgress = await response.json();
+          console.log(
+            "BEFORE UPDATE - Progress data:",
+            JSON.stringify(existingProgress, null, 2),
+          );
+        }
+      } catch (error) {
+        console.error("Failed to fetch existing progress for logging:", error);
+      }
+      
       // Update the progress in the backend
       await updateProgress.mutateAsync({ cardId: currentCard.id, rating });
+      
+      // Get and log the updated progress data
+      try {
+        const response = await fetch(
+          `/api/study/progress?userId=${user!.id}&cardId=${currentCard.id}`,
+        );
+        if (response.ok) {
+          const updatedProgress = await response.json();
+          console.log(
+            "AFTER UPDATE - Progress data:",
+            JSON.stringify(updatedProgress, null, 2),
+          );
+        }
+      } catch (error) {
+        console.error("Failed to fetch updated progress for logging:", error);
+      }
 
       // Update user stats based on rating
       if (rating === "again") {

@@ -445,15 +445,21 @@ export class DatabaseStorage implements IStorage {
         if (update.lapses !== undefined) typedUpdateData.lapses = update.lapses;
         if (update.nextReview !== undefined) typedUpdateData.nextReview = update.nextReview;
         
-        // Handle interval carefully - make sure it's stored as a string in the database
+        // Handle interval - store as a number in the database
         if (update.interval !== undefined) {
           // Log interval type before conversion
           console.log(`INTERVAL UPDATE - original value: ${update.interval}, type: ${typeof update.interval}`);
           
-          // Convert to string for storage
-          typedUpdateData.interval = String(update.interval);
+          // Ensure we have a number value for storage
+          const numericInterval = typeof update.interval === 'string' 
+            ? parseFloat(update.interval) 
+            : update.interval;
+            
+          // Make sure we have a valid number, not NaN, and convert to string for database storage
+          const validInterval = isNaN(numericInterval) ? 0 : numericInterval;
+          typedUpdateData.interval = String(validInterval);
           
-          console.log(`INTERVAL UPDATE - converted to: ${typedUpdateData.interval}`);
+          console.log(`INTERVAL UPDATE - converted to string: ${typedUpdateData.interval}`);
         }
         
         console.log(`Updating existing progress with data:`, JSON.stringify(typedUpdateData));
@@ -476,19 +482,27 @@ export class DatabaseStorage implements IStorage {
         return updatedProgress;
       } else {
         // Create new progress
-        // Handle the interval value - make sure it's always a string for storage
-        let intervalValue = "0";
+        // Handle the interval value - make sure it's always a numeric value for storage
+        let intervalValue = 0;
         if (update.interval !== undefined) {
           console.log(`NEW PROGRESS INTERVAL - original value: ${update.interval}, type: ${typeof update.interval}`);
-          intervalValue = String(update.interval);
-          console.log(`NEW PROGRESS INTERVAL - converted to: ${intervalValue}`);
+          
+          // Ensure we have a number value
+          const numericInterval = typeof update.interval === 'string' 
+            ? parseFloat(update.interval) 
+            : update.interval;
+            
+          // Make sure we have a valid number, not NaN
+          intervalValue = isNaN(numericInterval) ? 0 : numericInterval;
+          
+          console.log(`NEW PROGRESS INTERVAL - converted to number: ${intervalValue}`);
         }
         
         const insertData = {
           cardId,
           userId,
           ease: update.ease || 250,
-          interval: intervalValue,
+          interval: String(intervalValue), // Convert to string for database storage
           reviews: update.reviews || 1,
           lapses: update.lapses || 0,
           lastReviewed: now,
