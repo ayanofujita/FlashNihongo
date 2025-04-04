@@ -403,6 +403,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .json({ message: "Card ID and User ID are required" });
       }
 
+      // Fetch previous progress data for logging
+      const previousProgress = await storage.getStudyProgress(userId, cardId);
+      if (previousProgress) {
+        console.log("PREVIOUS STUDY PROGRESS:", JSON.stringify(previousProgress, null, 2));
+      } else {
+        console.log("PREVIOUS STUDY PROGRESS: None (new card)");
+      }
+
       console.log(
         `Updating study progress for card ${cardId}, user ${userId}, nextReview: ${nextReview}`,
       );
@@ -414,6 +422,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lapses,
         nextReview: nextReview ? new Date(nextReview) : undefined,
       });
+
+      console.log("UPDATED STUDY PROGRESS:", JSON.stringify(progress, null, 2));
 
       // Also update the deck's last studied timestamp
       const card = await storage.getCard(cardId);

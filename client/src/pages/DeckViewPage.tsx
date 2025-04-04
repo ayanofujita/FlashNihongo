@@ -172,25 +172,7 @@ const DeckViewPage = () => {
                     card.partOfSpeech || card.reading}
                 </div>
                 
-                {(card.example || card.exampleTranslation) && (
-                  <div className="mt-4 border-t pt-3">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-xs font-medium text-gray-500">Example</span>
-                    </div>
-                    <div className="bg-gray-50 rounded-md p-3">
-                      {card.example && (
-                        <div className="text-gray-800 font-jp text-sm mb-1">
-                          {card.example}
-                        </div>
-                      )}
-                      {card.exampleTranslation && (
-                        <div className="text-gray-600 italic text-sm">
-                          {card.exampleTranslation}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+
               </div>
             );
 
