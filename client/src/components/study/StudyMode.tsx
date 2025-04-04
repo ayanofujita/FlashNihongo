@@ -29,6 +29,13 @@ interface Card {
   example: string;
   exampleTranslation: string;
   partOfSpeech: string;
+  // Study progress properties that might be included when fetching cards due for study
+  interval?: string | number;
+  ease?: number;
+  reviews?: number;
+  lapses?: number;
+  nextReview?: string;
+  lastReviewed?: string;
 }
 
 interface Deck {
@@ -255,47 +262,66 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       }
       
       console.log('Previous base interval (converted):', baseInterval, 'type:', typeof baseInterval);
-
-      // Adjust ease based on response
-      switch (rating) {
-        case "again":
-          // For "again" responses, shorten the interval significantly
-          interval = AGAIN_INTERVAL;
-          ease = Math.max(130, ease - 20); // Minimum ease 130, decrease by 20
-          lapses += 1; // Increment lapses for "again" responses
-          break;
-        case "hard":
-          // For "hard" responses, use a shorter interval and decrease ease
-          interval = HARD_INTERVAL_FACTOR * baseInterval;
-          ease = Math.max(130, ease - 15); // Decrease ease by 15
-          break;
-        case "good":
-          // For "good" responses, use the current interval and keep ease stable
-          interval = baseInterval;
-          // No change to ease
-          break;
-        case "easy":
-          // For "easy" responses, use a longer interval and increase ease
-          interval = baseInterval * EASY_BONUS;
-          ease = Math.min(370, ease + 15); // Increase ease by 15, maximum 370
-          break;
-      }
-
-      // For reviews after the first one, calculate interval based on ease
-      if (reviews > 1 && rating !== "again") {
-        // Convert ease (percentage) to a multiplier
-        const easeMultiplier = ease / 100;
+      
+      // Get easeMultiplier for calculations
+      const easeMultiplier = ease / 100;
+      
+      // First review or relearning card (pressed again previously)
+      if (reviews <= 1 || rating === "again") {
+        // Adjust ease based on response
+        switch (rating) {
+          case "again":
+            // For "again" responses, reset to beginning
+            interval = AGAIN_INTERVAL;
+            ease = Math.max(130, ease - 20); // Minimum ease 130, decrease by 20
+            lapses += 1; // Increment lapses for "again" responses
+            break;
+          case "hard":
+            // For "hard" responses on new cards
+            interval = HARD_INTERVAL_FACTOR;
+            ease = Math.max(130, ease - 15); // Decrease ease by 15
+            break;
+          case "good":
+            // For "good" responses on new cards
+            interval = INITIAL_INTERVAL;
+            // No change to ease
+            break;
+          case "easy":
+            // For "easy" responses on new cards
+            interval = INITIAL_INTERVAL * EASY_BONUS;
+            ease = Math.min(370, ease + 15); // Increase ease by 15, maximum 370
+            break;
+        }
         
-        // Log before changing the interval
-        console.log(`INTERVAL CALCULATION - Before: ${interval} days, ease: ${ease}, modifier: ${intervalModifier}`);
-
-        // For subsequent reviews, use the formula: interval = interval * ease * modifier
-        interval = interval * easeMultiplier * intervalModifier;
+        console.log(`INTERVAL CALCULATION - First review: ${interval} days, ease: ${ease}`);
+      } 
+      // Subsequent reviews - apply SRS formula
+      else {
+        switch (rating) {
+          case "again":
+            // This case is already covered above
+            break;
+          case "hard":
+            // For "hard" responses, shorter interval, decrease ease
+            interval = baseInterval * HARD_INTERVAL_FACTOR;
+            ease = Math.max(130, ease - 15); // Decrease ease
+            break;
+          case "good":
+            // For "good" responses, calculate new interval using ease
+            interval = baseInterval * easeMultiplier;
+            // No change to ease
+            break;
+          case "easy":
+            // For "easy" responses, longer interval, increase ease
+            interval = baseInterval * easeMultiplier * EASY_BONUS;
+            ease = Math.min(370, ease + 15); // Increase ease
+            break;
+        }
         
-        // Log after changing the interval
-        console.log(`INTERVAL CALCULATION - After: ${interval} days, easeMultiplier: ${easeMultiplier}`);
-      } else {
-        console.log(`INTERVAL CALCULATION - First review or "again" rating, interval: ${interval} days`);
+        // Apply user's interval modifier
+        interval *= intervalModifier;
+        
+        console.log(`INTERVAL CALCULATION - Review #${reviews}: base=${baseInterval}, new=${interval}, ease=${ease}, modifier=${intervalModifier}`);
       }
 
       // Calculate next review date based on the interval in days
@@ -490,10 +516,39 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
 
     // Get the current card's existing progress if any
     const existingProgress = currentCard ? dueCards?.find(c => c.id === currentCard.id) : null;
-    const isReviewed = !!existingProgress;
+    const isReviewed = !!(existingProgress && existingProgress.reviews > 0);
 
-    // For new cards without review history, show initial intervals
-    if (!isReviewed) {
+    // Extract interval from existing progress and convert to number
+    let currentInterval: number = INITIAL_INTERVAL;
+    
+    // Extract ease factor from existing progress
+    let currentEase: number = 250;  // Default ease factor
+    
+    // Extract review count
+    let reviewCount: number = 0;
+    
+    if (existingProgress) {
+      // Parse interval from string or use directly if it's a number
+      if (typeof existingProgress.interval === 'string') {
+        currentInterval = parseFloat(existingProgress.interval || '0');
+      } else if (typeof existingProgress.interval === 'number') {
+        currentInterval = existingProgress.interval;
+      }
+      
+      // Use existing ease factor
+      currentEase = existingProgress.ease || 250;
+      
+      // Get review count
+      reviewCount = existingProgress.reviews || 0;
+      
+      console.log(`Card ${currentCard?.id} progress: interval=${currentInterval}, ease=${currentEase}, reviews=${reviewCount}`);
+    }
+    
+    // Convert ease to a multiplier (divide by 100)
+    const easeMultiplier = currentEase / 100;
+    
+    // For new cards or cards being relearned (no reviews or "again" pressed)
+    if (!isReviewed || rating === "again") {
       switch (rating) {
         case "again":
           return formatInterval(AGAIN_INTERVAL);
@@ -507,30 +562,20 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     } 
     // For cards being reviewed (not the first time)
     else {
-      let baseInterval = 1; // Default to 1 day if we can't determine
-      
       try {
-        // Attempt to get the current interval from the card data
-        // This is an approximation as we don't have direct access to study_progress here
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        
-        // Try to estimate current interval from last review date if available
-        // (This is an approximation and would work better with direct study_progress access)
-        baseInterval = INITIAL_INTERVAL; // Fallback to the initial interval
-        
         switch (rating) {
           case "again":
+            // The again case is already handled above
             return formatInterval(AGAIN_INTERVAL);
           case "hard":
-            // Hard reduces the interval
-            return formatInterval(baseInterval * HARD_INTERVAL_FACTOR);
+            // Hard: current_interval * hard_factor * ease / 100
+            return formatInterval(currentInterval * HARD_INTERVAL_FACTOR);
           case "good":
-            // Good keeps same interval but applies ease factor
-            return formatInterval(baseInterval);
+            // Good: current_interval * ease / 100
+            return formatInterval(currentInterval * easeMultiplier);
           case "easy":
-            // Easy multiplies the interval by the bonus factor
-            return formatInterval(baseInterval * EASY_BONUS);
+            // Easy: current_interval * ease / 100 * easy_bonus
+            return formatInterval(currentInterval * easeMultiplier * EASY_BONUS);
         }
       } catch (error) {
         console.error("Error calculating review interval:", error);
