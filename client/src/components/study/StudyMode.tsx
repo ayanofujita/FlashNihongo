@@ -5,7 +5,18 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Settings, X } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Settings, X, Shuffle, ArrowDownUp } from "lucide-react";
 import StudyCard from "./StudyCard";
 import { useLocation } from "wouter";
 import { useUser } from "@/components/auth/UserContext";
@@ -53,6 +64,11 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
 
   // Track the current card being studied (store the full card not just the index)
   const [currentCard, setCurrentCard] = useState<Card | null>(null);
+  
+  // Settings state
+  const [isShuffled, setIsShuffled] = useState<boolean>(false);
+  const [intervalModifier, setIntervalModifier] = useState<number>(1);
+  const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
 
   // Reset state when deck ID changes
   useEffect(() => {
@@ -257,8 +273,8 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
         // Convert ease (percentage) to a multiplier
         const easeMultiplier = ease / 100;
 
-        // For subsequent reviews, use the formula: interval = interval * ease
-        interval = interval * easeMultiplier * INTERVAL_MODIFIER;
+        // For subsequent reviews, use the formula: interval = interval * ease * modifier
+        interval = interval * easeMultiplier * intervalModifier;
       }
 
       // Calculate next review date based on the interval in days
@@ -294,6 +310,78 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       });
     },
   });
+
+  // Function to shuffle cards
+  const handleShuffleCards = () => {
+    if (!cardsToStudy.length) return;
+    
+    // Create a copy and only shuffle cards that haven't been completed yet
+    const remainingCards = cardsToStudy.filter(
+      card => !completed.includes(card.id)
+    );
+    
+    // Shuffle the array using Fisher-Yates algorithm
+    for (let i = remainingCards.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [remainingCards[i], remainingCards[j]] = [remainingCards[j], remainingCards[i]];
+    }
+    
+    // Update state with shuffled cards
+    const newCardsToStudy = [
+      ...cardsToStudy.filter(card => completed.includes(card.id)),
+      ...remainingCards
+    ];
+    
+    setCardsToStudy(newCardsToStudy);
+    
+    // Update current card if we have remaining cards
+    if (remainingCards.length > 0 && !currentCard) {
+      setCurrentCard(remainingCards[0]);
+    } else if (remainingCards.length > 0) {
+      // Update to the first card in the shuffled deck
+      setCurrentCard(remainingCards[0]);
+    }
+    
+    setIsShuffled(true);
+    
+    toast({
+      title: "Cards Shuffled",
+      description: "Your cards have been randomly shuffled.",
+    });
+  };
+  
+  // Function to unshuffle cards (restore original order)
+  const handleUnshuffleCards = () => {
+    if (!dueCards || !cardsToStudy.length) return;
+    
+    // Restore original order from dueCards
+    const filteredDueCards = dueCards.filter(
+      card => !completed.includes(card.id)
+    );
+    
+    // We need to keep completed cards in our study deck
+    const newCardsToStudy = [
+      ...cardsToStudy.filter(card => completed.includes(card.id)),
+      ...filteredDueCards
+    ];
+    
+    setCardsToStudy(newCardsToStudy);
+    
+    // Update current card if we have remaining cards
+    if (filteredDueCards.length > 0 && !currentCard) {
+      setCurrentCard(filteredDueCards[0]);
+    } else if (filteredDueCards.length > 0) {
+      // Update to the first card in the ordered deck
+      setCurrentCard(filteredDueCards[0]);
+    }
+    
+    setIsShuffled(false);
+    
+    toast({
+      title: "Cards Unshuffled",
+      description: "Your cards have been restored to their original order.",
+    });
+  };
 
   // Function to handle rating and move to the next card
   const handleRating = async (rating: "again" | "hard" | "good" | "easy") => {
@@ -361,8 +449,11 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
 
   const getIntervalText = (rating: "again" | "hard" | "good" | "easy") => {
     const formatInterval = (interval: number) => {
+      // Apply the interval modifier to show accurate predictions
+      const adjustedInterval = interval * intervalModifier;
+      
       // Convert to hours
-      const hours = Math.round(interval * 24);
+      const hours = Math.round(adjustedInterval * 24);
 
       // If less than 24 hours, show in hours
       if (hours < 24) {
@@ -370,13 +461,13 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       }
 
       // Otherwise show in days, only round if not a whole number
-      const days = Number.isInteger(interval)
-        ? interval
-        : Number(interval.toFixed(1));
+      const days = Number.isInteger(adjustedInterval)
+        ? adjustedInterval
+        : Number(adjustedInterval.toFixed(1));
       return `${days}d`;
     };
 
-    // For the first review, we can show static values
+    // For the first review, show values with the modifier applied
     switch (rating) {
       case "again":
         return formatInterval(AGAIN_INTERVAL);
@@ -445,9 +536,66 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
           </p>
         </div>
         <div className="flex space-x-2 md:space-x-4">
-          {/* <Button variant="outline" className="flex items-center">
-            <Settings className="mr-1 h-4 w-4" /> Options
-          </Button> */}
+          <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="flex items-center">
+                <Settings className="mr-1 h-4 w-4" /> Settings
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Study Settings</DialogTitle>
+                <DialogDescription>
+                  Customize your study session preferences.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4 space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="intervalModifier" className="text-sm font-medium flex justify-between">
+                    <span>Interval Modifier: {intervalModifier.toFixed(1)}x</span>
+                    <span className="text-xs text-gray-500">(Affects spacing between reviews)</span>
+                  </Label>
+                  <Slider 
+                    id="intervalModifier"
+                    value={[intervalModifier]} 
+                    min={0.5} 
+                    max={2.0} 
+                    step={0.1} 
+                    onValueChange={(value) => setIntervalModifier(value[0])}
+                    className="my-4"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>Shorter</span>
+                    <span>Default</span>
+                    <span>Longer</span>
+                  </div>
+                </div>
+                
+                <div className="flex justify-center space-x-3 pt-2">
+                  <Button
+                    variant={isShuffled ? "outline" : "secondary"}
+                    className="flex items-center"
+                    onClick={handleUnshuffleCards}
+                    disabled={!isShuffled}
+                  >
+                    <ArrowDownUp className="mr-1 h-4 w-4" /> Sequential
+                  </Button>
+                  <Button
+                    variant={isShuffled ? "secondary" : "outline"}
+                    className="flex items-center"
+                    onClick={handleShuffleCards}
+                    disabled={isShuffled}
+                  >
+                    <Shuffle className="mr-1 h-4 w-4" /> Shuffle
+                  </Button>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button onClick={() => setSettingsOpen(false)}>Close</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
           <Button
             variant="outline"
             className="flex items-center"
