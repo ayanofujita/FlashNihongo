@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -16,7 +17,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Settings, X, Shuffle, ArrowDownUp } from "lucide-react";
+import { Settings, X, Shuffle, ArrowDownUp, Info } from "lucide-react";
 import StudyCard from "./StudyCard";
 import { useLocation } from "wouter";
 import { useUser } from "@/components/auth/UserContext";

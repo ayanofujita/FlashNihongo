@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import StudyMode from "@/components/study/StudyMode";
