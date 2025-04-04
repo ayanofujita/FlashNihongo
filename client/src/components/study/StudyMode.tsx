@@ -39,15 +39,6 @@ interface Card {
   lastReviewed?: string;
 }
 
-interface StudyProgress {
-  interval?: string | number;
-  ease?: number;
-  reviews?: number;
-  lapses?: number;
-  nextReview?: string;
-  lastReviewed?: string;
-}
-
 interface Deck {
   id: number;
   name: string;
@@ -245,7 +236,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
   // Helper function to calculate new interval based on progress and rating
   const calculateInterval = (
     rating: "again" | "hard" | "good" | "easy",
-    existingProgress: StudyProgress | null,
+    existingProgress: any,
     modifier: number = 1,
   ): number => {
     const isFirstReview =
@@ -345,7 +336,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       );
 
       // First get existing progress if any to properly increment reviews/lapses
-      let existingProgress: StudyProgress | null = null;
+      let existingProgress = null;
       try {
         const response = await fetch(
           `/api/study/progress?userId=${userId}&cardId=${cardId}`,
@@ -577,19 +568,9 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     rating: "again" | "hard" | "good" | "easy",
   ): string => {
     // Get the current card's existing progress if any
-    const cardWithProgress = currentCard && dueCards
-      ? dueCards.find((c) => c.id === currentCard.id)
+    const existingProgress = currentCard
+      ? dueCards?.find((c) => c.id === currentCard.id)
       : null;
-      
-    // Convert to StudyProgress type by extracting only relevant properties
-    const existingProgress: StudyProgress | null = cardWithProgress ? {
-      interval: cardWithProgress.interval,
-      ease: cardWithProgress.ease,
-      reviews: cardWithProgress.reviews,
-      lapses: cardWithProgress.lapses,
-      nextReview: cardWithProgress.nextReview,
-      lastReviewed: cardWithProgress.lastReviewed,
-    } : null;
 
     // Calculate the interval using our helper function and format it
     const interval = calculateInterval(
@@ -779,25 +760,22 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
                     <div className="text-gray-600 text-sm mb-3">
                       {currentCard.partOfSpeech}, {currentCard.reading}
                     </div>
+                    {(currentCard.example || currentCard.exampleTranslation) && (
+                      <div className="mt-4 border-t pt-3 flex justify-end">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8 rounded-full bg-white"
+                          onClick={() => setCardDetailsOpen(true)}
+                        >
+                          <span className="sr-only">View Example</span>
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-blue-600">
+                            <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </Button>
+                      </div>
+                    )}
                   </>
-                }
-                actionButton={
-                  (currentCard.example || currentCard.exampleTranslation) ? (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8 rounded-full bg-white"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCardDetailsOpen(true);
-                      }}
-                    >
-                      <span className="sr-only">View Example</span>
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-blue-600">
-                        <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </Button>
-                  ) : null
                 }
               />
             )}
