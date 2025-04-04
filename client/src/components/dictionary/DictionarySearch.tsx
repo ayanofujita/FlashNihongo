@@ -56,22 +56,31 @@ const DictionarySearch = () => {
     <div>
       <h2 className="text-xl font-bold mb-6">Japanese Dictionary Search</h2>
       
-      <div className="bg-white rounded-lg shadow p-6 border border-gray-200 mb-8">
+      <div className="mb-8">
         <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-grow">
-            <div className="relative">
-              <Input
-                type="text"
-                placeholder="Search for a Japanese word..."
-                className="w-full pl-10 pr-4 py-3"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={handleKeyDown}
-              />
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-gray-400" />
-              </div>
+          <div className="flex-grow relative">
+            <Input
+              type="text"
+              placeholder="Search for a Japanese word..."
+              className="w-full pl-10 pr-10 py-3"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-gray-400" />
             </div>
+            {searchQuery && (
+              <button
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                onClick={() => setSearchQuery("")}
+                aria-label="Clear search"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
           <div className="flex">
             <Button 

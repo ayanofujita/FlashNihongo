@@ -111,13 +111,14 @@ const DeckViewPage = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center">
+      {/* Improved header for mobile */}
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+        <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={() => navigate("/decks")} 
-            className="mr-4"
+            className="w-fit"
           >
             <ArrowLeft className="h-4 w-4 mr-1" /> Back to Decks
           </Button>
@@ -136,7 +137,7 @@ const DeckViewPage = () => {
             setCardToEdit(null);
             setEditDialogOpen(true);
           }}
-          className="bg-blue-600 hover:bg-blue-700"
+          className="bg-blue-600 hover:bg-blue-700 w-full md:w-auto"
           size="sm"
         >
           <Plus className="h-4 w-4 mr-1" /> Add Card
