@@ -281,7 +281,26 @@ export class DatabaseStorage implements IStorage {
     return card;
   }
 
+  async checkCardExists(deckId: number, front: string): Promise<boolean> {
+    // Check if a card with the same front text already exists in the deck
+    const existingCards = await db
+      .select()
+      .from(cards)
+      .where(and(
+        eq(cards.deckId, deckId),
+        eq(cards.front, front)
+      ));
+    
+    return existingCards.length > 0;
+  }
+
   async createCard(card: InsertCard): Promise<Card> {
+    // Check if card with same front text already exists in the deck
+    const exists = await this.checkCardExists(card.deckId, card.front);
+    if (exists) {
+      throw new Error(`Card with text "${card.front}" already exists in this deck`);
+    }
+    
     const [newCard] = await db.insert(cards).values(card).returning();
     return newCard;
   }
@@ -290,6 +309,21 @@ export class DatabaseStorage implements IStorage {
     id: number,
     cardUpdate: Partial<InsertCard>,
   ): Promise<Card | undefined> {
+    // If updating the front text, check if it would create a duplicate
+    if (cardUpdate.front) {
+      // First get the current card to get its deck ID
+      const currentCard = await this.getCard(id);
+      if (currentCard) {
+        // If front text changed, check for duplicates
+        if (currentCard.front !== cardUpdate.front) {
+          const exists = await this.checkCardExists(currentCard.deckId, cardUpdate.front);
+          if (exists) {
+            throw new Error(`Card with text "${cardUpdate.front}" already exists in this deck`);
+          }
+        }
+      }
+    }
+    
     const [updatedCard] = await db
       .update(cards)
       .set(cardUpdate)
