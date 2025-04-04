@@ -411,9 +411,15 @@ export class DatabaseStorage implements IStorage {
         if (update.lapses !== undefined) typedUpdateData.lapses = update.lapses;
         if (update.nextReview !== undefined) typedUpdateData.nextReview = update.nextReview;
         
-        // Always convert interval to string if present
+        // Handle interval carefully - make sure it's stored as a string in the database
         if (update.interval !== undefined) {
+          // Log interval type before conversion
+          console.log(`INTERVAL UPDATE - original value: ${update.interval}, type: ${typeof update.interval}`);
+          
+          // Convert to string for storage
           typedUpdateData.interval = String(update.interval);
+          
+          console.log(`INTERVAL UPDATE - converted to: ${typedUpdateData.interval}`);
         }
         
         console.log(`Updating existing progress with data:`, JSON.stringify(typedUpdateData));
@@ -436,13 +442,19 @@ export class DatabaseStorage implements IStorage {
         return updatedProgress;
       } else {
         // Create new progress
+        // Handle the interval value - make sure it's always a string for storage
+        let intervalValue = "0";
+        if (update.interval !== undefined) {
+          console.log(`NEW PROGRESS INTERVAL - original value: ${update.interval}, type: ${typeof update.interval}`);
+          intervalValue = String(update.interval);
+          console.log(`NEW PROGRESS INTERVAL - converted to: ${intervalValue}`);
+        }
+        
         const insertData = {
           cardId,
           userId,
           ease: update.ease || 250,
-          interval: update.interval 
-            ? String(update.interval)
-            : "0",
+          interval: intervalValue,
           reviews: update.reviews || 1,
           lapses: update.lapses || 0,
           lastReviewed: now,

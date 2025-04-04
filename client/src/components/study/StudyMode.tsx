@@ -216,6 +216,8 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       let ease = 250; // Default ease factor
       let reviews = 1;
       let lapses = 0;
+      
+      console.log("UPDATING PROGRESS - Card ID:", cardId, "User ID:", userId, "Rating:", rating);
 
       // First get existing progress if any to properly increment reviews/lapses
       let existingProgress = null;
@@ -230,6 +232,9 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
 
           // Use the existing ease if available
           ease = existingProgress?.ease || ease;
+          
+          // Log the existing progress details
+          console.log('EXISTING PROGRESS:', JSON.stringify(existingProgress, null, 2));
         }
       } catch (error) {
         console.error("Failed to fetch existing progress:", error);
@@ -237,11 +242,19 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
 
       // Base interval calculation on existing progress if available
       // Make sure to convert the stored interval string to a number
-      let baseInterval = existingProgress?.interval 
-        ? parseFloat(existingProgress.interval) 
-        : INITIAL_INTERVAL;
-        
-      console.log('Previous base interval:', baseInterval);
+      let baseInterval = INITIAL_INTERVAL; // Default to initial value
+      
+      if (existingProgress?.interval) {
+        // Handle whether interval is stored as a string or number
+        if (typeof existingProgress.interval === 'string') {
+          baseInterval = parseFloat(existingProgress.interval);
+        } else if (typeof existingProgress.interval === 'number') {
+          baseInterval = existingProgress.interval;
+        }
+        console.log('Previous base interval (original):', existingProgress.interval, 'type:', typeof existingProgress.interval);
+      }
+      
+      console.log('Previous base interval (converted):', baseInterval, 'type:', typeof baseInterval);
 
       // Adjust ease based on response
       switch (rating) {
@@ -272,9 +285,17 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       if (reviews > 1 && rating !== "again") {
         // Convert ease (percentage) to a multiplier
         const easeMultiplier = ease / 100;
+        
+        // Log before changing the interval
+        console.log(`INTERVAL CALCULATION - Before: ${interval} days, ease: ${ease}, modifier: ${intervalModifier}`);
 
         // For subsequent reviews, use the formula: interval = interval * ease * modifier
         interval = interval * easeMultiplier * intervalModifier;
+        
+        // Log after changing the interval
+        console.log(`INTERVAL CALCULATION - After: ${interval} days, easeMultiplier: ${easeMultiplier}`);
+      } else {
+        console.log(`INTERVAL CALCULATION - First review or "again" rating, interval: ${interval} days`);
       }
 
       // Calculate next review date based on the interval in days
@@ -500,18 +521,16 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
         
         switch (rating) {
           case "again":
-            return formatInterval(AGAIN_INTERVAL) + " → ...";
+            return formatInterval(AGAIN_INTERVAL);
           case "hard":
             // Hard reduces the interval
-            return formatInterval(baseInterval * HARD_INTERVAL_FACTOR) + " → ...";
+            return formatInterval(baseInterval * HARD_INTERVAL_FACTOR);
           case "good":
-            // Good keeps same interval but applies ease factor next time
-            const goodNextInterval = baseInterval * 2.5 * intervalModifier;
-            return formatInterval(baseInterval) + " → " + formatInterval(goodNextInterval);
+            // Good keeps same interval but applies ease factor
+            return formatInterval(baseInterval);
           case "easy":
             // Easy multiplies the interval by the bonus factor
-            const easyNextInterval = baseInterval * EASY_BONUS * 2.5 * intervalModifier;
-            return formatInterval(baseInterval * EASY_BONUS) + " → " + formatInterval(easyNextInterval);
+            return formatInterval(baseInterval * EASY_BONUS);
         }
       } catch (error) {
         console.error("Error calculating review interval:", error);
