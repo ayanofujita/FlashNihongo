@@ -21,16 +21,8 @@ import StudyCard from "./StudyCard";
 import { useLocation } from "wouter";
 import { useUser } from "@/components/auth/UserContext";
 import CardDetailsModal from "@/components/deck/CardDetailsModal";
-
-interface Card {
-  id: number;
-  front: string;
-  back: string;
-  reading: string;
-  example: string;
-  exampleTranslation: string;
-  partOfSpeech: string;
-  // Study progress properties that might be included when fetching cards due for study
+// Define StudyProgressType locally to avoid import issues
+interface StudyProgressType {
   interval?: string | number;
   ease?: number;
   reviews?: number;
@@ -39,7 +31,16 @@ interface Card {
   lastReviewed?: string;
 }
 
-interface StudyProgress {
+// Card interface that combines Card and necessary StudyProgress fields for the UI
+interface Card {
+  id: number;
+  front: string;
+  back: string;
+  reading: string | null;
+  example: string | null;
+  exampleTranslation: string | null;
+  partOfSpeech: string | null;
+  // Study progress properties that might be included when fetching cards due for study
   interval?: string | number;
   ease?: number;
   reviews?: number;
@@ -245,7 +246,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
   // Helper function to calculate new interval based on progress and rating
   const calculateInterval = (
     rating: "again" | "hard" | "good" | "easy",
-    existingProgress: StudyProgress | null,
+    existingProgress: StudyProgressType | null,
     modifier: number = 1,
   ): number => {
     const isFirstReview =
@@ -345,7 +346,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       );
 
       // First get existing progress if any to properly increment reviews/lapses
-      let existingProgress: StudyProgress | null = null;
+      let existingProgress: StudyProgressType | null = null;
       try {
         const response = await fetch(
           `/api/study/progress?userId=${userId}&cardId=${cardId}`,
@@ -581,8 +582,8 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       ? dueCards.find((c) => c.id === currentCard.id)
       : null;
       
-    // Convert to StudyProgress type by extracting only relevant properties
-    const existingProgress: StudyProgress | null = cardWithProgress ? {
+    // Convert to StudyProgressType by extracting only relevant properties
+    const existingProgress: StudyProgressType | null = cardWithProgress ? {
       interval: cardWithProgress.interval,
       ease: cardWithProgress.ease,
       reviews: cardWithProgress.reviews,
