@@ -631,6 +631,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.redirect('/');
     });
   });
+  
+  // Special admin routes for updating sample sentences
+  // Get all cards for a specific user
+  app.get("/api/admin/user-cards/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      // Get all decks for this user
+      const decks = await storage.getDecksByUserId(userId);
+      
+      // Get all cards from all decks
+      const allCards = [];
+      for (const deck of decks) {
+        const cards = await storage.getCards(deck.id);
+        allCards.push(...cards);
+      }
+      
+      res.json(allCards);
+    } catch (error) {
+      console.error("Error fetching user cards:", error);
+      res.status(500).json({ message: "Failed to fetch user cards" });
+    }
+  });
+  
+  // Update a card with example sentences and reading
+  app.post("/api/admin/update-card/:cardId", async (req, res) => {
+    try {
+      const cardId = parseInt(req.params.cardId);
+      
+      if (isNaN(cardId)) {
+        return res.status(400).json({ message: "Invalid card ID" });
+      }
+      
+      const { example, exampleTranslation, reading } = req.body;
+      
+      // Update the card
+      const updatedCard = await storage.updateCard(cardId, {
+        example,
+        exampleTranslation,
+        reading
+      });
+      
+      if (!updatedCard) {
+        return res.status(404).json({ message: "Card not found" });
+      }
+      
+      res.json(updatedCard);
+    } catch (error) {
+      console.error("Error updating card:", error);
+      res.status(500).json({ message: "Failed to update card" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
