@@ -385,6 +385,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!progress) {
         return res.status(404).json({ message: "Study progress not found" });
       }
+      
+      // Log what we're sending back to the client
+      console.log(`Progress for card ${cardId}, user ${userId}:`, JSON.stringify(progress, null, 2));
 
       res.json(progress);
     } catch (error) {

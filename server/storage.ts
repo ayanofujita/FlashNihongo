@@ -510,6 +510,11 @@ export class DatabaseStorage implements IStorage {
       return bCreatedAt - aCreatedAt; // Newer cards first
     });
 
+    // Log the first card to see what data is being returned
+    if (dueCards.length > 0) {
+      console.log(`First due card details:`, JSON.stringify(dueCards[0], null, 2));
+    }
+    
     console.log(`Returning ${dueCards.length} due cards for review`);
     return dueCards;
   }
