@@ -654,6 +654,14 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     // Apply the interval modifier to show accurate predictions
     const adjustedInterval = interval;
 
+    // Convert to minutes
+    const minutes = Math.round(adjustedInterval * 24 * 60);
+
+    // If less than 1 hour, show in minutes
+    if (minutes < 60) {
+      return `${minutes}m`;
+    }
+    
     // Convert to hours
     const hours = Math.round(adjustedInterval * 24);
 
