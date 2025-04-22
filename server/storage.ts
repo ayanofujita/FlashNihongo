@@ -406,18 +406,23 @@ export class DatabaseStorage implements IStorage {
       }
 
       if (isDue) {
+        // Convert interval string to number
+        const intervalValue = progress?.interval ? parseFloat(progress.interval) : 0;
+        
         // Combine card with progress data for the frontend to access
         const cardWithProgress = {
           ...card,
           // Add progress fields if they exist
-          interval: progress?.interval || 0,
+          interval: intervalValue, // Use the converted numeric value
           ease: progress?.ease || 250, // Default ease
           reviews: progress?.reviews || 0,
           lapses: progress?.lapses || 0,
           nextReview: progress?.nextReview ? progress.nextReview.toISOString() : null,
           lastReviewed: progress?.lastReviewed ? progress.lastReviewed.toISOString() : null,
         };
-
+        
+        console.log(`Card ${card.id} - interval from DB: ${progress?.interval}, converted to number: ${intervalValue}`);
+        
         dueCards.push(cardWithProgress);
       }
     }
