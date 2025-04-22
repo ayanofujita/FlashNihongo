@@ -268,7 +268,6 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     existingProgress: StudyProgressType | null,
     modifier: number = 1,
   ): number => {
-    console.log("calculateInterval - existingProgress:", existingProgress);
 
     // Ensure reviews is a proper number for comparison
     let reviewCount = 0;
