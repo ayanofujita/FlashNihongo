@@ -406,7 +406,19 @@ export class DatabaseStorage implements IStorage {
       }
 
       if (isDue) {
-        dueCards.push(card);
+        // Combine card with progress data for the frontend to access
+        const cardWithProgress = {
+          ...card,
+          // Add progress fields if they exist
+          interval: progress?.interval || 0,
+          ease: progress?.ease || 250, // Default ease
+          reviews: progress?.reviews || 0,
+          lapses: progress?.lapses || 0,
+          nextReview: progress?.nextReview ? progress.nextReview.toISOString() : null,
+          lastReviewed: progress?.lastReviewed ? progress.lastReviewed.toISOString() : null,
+        };
+        
+        dueCards.push(cardWithProgress);
       }
     }
 
