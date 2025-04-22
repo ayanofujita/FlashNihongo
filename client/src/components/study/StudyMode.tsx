@@ -639,7 +639,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       existingProgress,
       intervalModifier,
     );
-    console.log(`!!!Interval for ${rating}: ${interval} !!!!`);
+    console.log(`%c[INTERVAL] ${rating}: ${interval}`, 'background: #ffd700; color: #000; padding: 4px; font-weight: bold;');
     return formatInterval(interval);
   };
 
