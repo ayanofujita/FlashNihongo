@@ -236,7 +236,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
 
     // If it's already a number, just return it
     if (typeof interval === "number") return interval;
-    
+
     // If it's a string, convert it to a number
     if (typeof interval === "string") {
       // Convert to number and handle potential NaN situations
@@ -524,10 +524,10 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       } catch (error) {
         console.error("Failed to fetch existing progress for logging:", error);
       }
-      
+
       // Update the progress in the backend
       await updateProgress.mutateAsync({ cardId: currentCard.id, rating });
-      
+
       // Get and log the updated progress data
       try {
         const response = await fetch(
@@ -639,6 +639,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       existingProgress,
       intervalModifier,
     );
+    console.log(`!!!Interval for ${rating}: ${interval} !!!!`);
     return formatInterval(interval);
   };
 
