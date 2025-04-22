@@ -376,7 +376,19 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
           console.log(
             "EXISTING PROGRESS:",
             JSON.stringify(existingProgress, null, 2),
+            "reviews type:", typeof existingProgress?.reviews
           );
+          // Log if we'd consider this a first review
+          if (existingProgress) {
+            const wouldBeFirstReview = 
+              existingProgress.reviews === undefined ||
+              existingProgress.reviews === null ||
+              existingProgress.reviews <= 0;
+            console.log(
+              "Would be considered first review?", wouldBeFirstReview,
+              "reviews value:", existingProgress.reviews
+            );
+          }
         }
       } catch (error) {
         console.error("Failed to fetch existing progress:", error);
@@ -637,20 +649,32 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
         : null;
 
     console.log("getIntervalText - cardWithProgress:", cardWithProgress);
+    
+    if (cardWithProgress) {
+      console.log("Card has these review properties - card.reviews:", 
+        cardWithProgress.reviews, 
+        "type:", typeof cardWithProgress.reviews,
+        "keys:", Object.keys(cardWithProgress)
+      );
+    }
 
     // Convert to StudyProgressType by extracting only relevant properties and ensuring reviews is a number
     const existingProgress: StudyProgressType | null = cardWithProgress
       ? {
           interval: cardWithProgress.interval,
           ease: cardWithProgress.ease,
-          reviews: typeof cardWithProgress.reviews === 'number' ? cardWithProgress.reviews : 0,
+          reviews: typeof cardWithProgress.reviews === 'number' ? cardWithProgress.reviews : 
+                   (cardWithProgress.reviews === undefined ? 0 : parseInt(cardWithProgress.reviews as string, 10)),
           lapses: cardWithProgress.lapses,
           nextReview: cardWithProgress.nextReview,
           lastReviewed: cardWithProgress.lastReviewed,
         }
       : null;
       
-    console.log("cardWithProgress.reviews type:", typeof cardWithProgress?.reviews);
+    console.log("cardWithProgress.reviews:", cardWithProgress?.reviews, 
+                "type:", typeof cardWithProgress?.reviews, 
+                "existingProgress.reviews:", existingProgress?.reviews,
+                "type:", typeof existingProgress?.reviews);
 
     console.log("getIntervalText - existingProgress being passed to calculateInterval:", 
       existingProgress, 
