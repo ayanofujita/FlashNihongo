@@ -102,7 +102,7 @@ export const studyProgress = pgTable("study_progress", {
   cardId: integer("card_id").references(() => cards.id).notNull(),
   userId: integer("user_id").references(() => users.id).notNull(),
   ease: integer("ease").default(250),
-  interval: numeric("interval", { precision: 5, scale: 2 }).default("0"), // Must use string format for default
+  interval: numeric("interval", { precision: 5, scale: 2 }).default("0").notNull(), // PostgreSQL numeric stored as string but handled as number in code
   reviews: integer("reviews").default(0),
   lapses: integer("lapses").default(0),
   lastReviewed: timestamp("last_reviewed"),
