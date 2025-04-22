@@ -254,10 +254,23 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     existingProgress: StudyProgressType | null,
     modifier: number = 1,
   ): number => {
+    console.log("calculateInterval - existingProgress:", existingProgress);
+    
     const isFirstReview =
       !existingProgress ||
-      !existingProgress.reviews ||
+      existingProgress.reviews === undefined ||
+      existingProgress.reviews === null ||
       existingProgress.reviews <= 0;
+    
+    console.log(
+      "calculateInterval - isFirstReview check:",
+      "!existingProgress =", !existingProgress,
+      "existingProgress.reviews === undefined =", existingProgress ? (typeof existingProgress.reviews === "undefined") : "N/A",
+      "existingProgress.reviews === null =", existingProgress ? (existingProgress.reviews === null) : "N/A",
+      "existingProgress.reviews <= 0 =", existingProgress ? (typeof existingProgress.reviews !== "undefined" && existingProgress.reviews !== null ? existingProgress.reviews <= 0 : "N/A (undefined/null)") : "N/A",
+      "Final isFirstReview value:", isFirstReview
+    );
+    
     const ease = existingProgress?.ease || SRS.EASE.DEFAULT;
     const easeMultiplier = ease / 100;
 
@@ -623,17 +636,26 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
         ? dueCards.find((c) => c.id === currentCard.id)
         : null;
 
-    // Convert to StudyProgressType by extracting only relevant properties
+    console.log("getIntervalText - cardWithProgress:", cardWithProgress);
+
+    // Convert to StudyProgressType by extracting only relevant properties and ensuring reviews is a number
     const existingProgress: StudyProgressType | null = cardWithProgress
       ? {
           interval: cardWithProgress.interval,
           ease: cardWithProgress.ease,
-          reviews: cardWithProgress.reviews,
+          reviews: typeof cardWithProgress.reviews === 'number' ? cardWithProgress.reviews : 0,
           lapses: cardWithProgress.lapses,
           nextReview: cardWithProgress.nextReview,
           lastReviewed: cardWithProgress.lastReviewed,
         }
       : null;
+      
+    console.log("cardWithProgress.reviews type:", typeof cardWithProgress?.reviews);
+
+    console.log("getIntervalText - existingProgress being passed to calculateInterval:", 
+      existingProgress, 
+      "reviews type:", existingProgress ? typeof existingProgress.reviews : "N/A"
+    );
 
     // Calculate the interval using our helper function and format it
     const interval = calculateInterval(
