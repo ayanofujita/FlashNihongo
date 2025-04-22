@@ -266,6 +266,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
 
     // For first reviews of new cards
     if (isFirstReview) {
+      console.log("FIRST REVIEW");
       switch (rating) {
         case "again":
           interval = SRS.INTERVAL.AGAIN;
@@ -283,6 +284,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     }
     // Subsequent reviews - apply SRS formula with ease factor
     else {
+      console.log("NOT FIRST REVIEW");
       switch (rating) {
         case "again":
           interval = baseInterval * SRS.INTERVAL.AGAIN * easeMultiplier;
@@ -639,7 +641,10 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
       existingProgress,
       intervalModifier,
     );
-    console.log(`%c[INTERVAL] ${rating}: ${interval}`, 'background: #ffd700; color: #000; padding: 4px; font-weight: bold;');
+    console.log(
+      `%c[INTERVAL] ${rating}: ${interval}`,
+      "background: #ffd700; color: #000; padding: 4px; font-weight: bold;",
+    );
     return formatInterval(interval);
   };
 
