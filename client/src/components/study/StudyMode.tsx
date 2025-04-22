@@ -232,20 +232,28 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
 
   // Helper function to parse an interval (could be string or number)
   const parseInterval = (interval: string | number | undefined): number => {
-    if (interval === undefined) return SRS.INTERVAL.GOOD; // Default to 1 day
+    // Handle undefined or null case
+    if (interval === undefined || interval === null) return SRS.INTERVAL.GOOD; // Default to 1 day
 
     // If it's already a number, just return it
-    if (typeof interval === "number") return interval;
+    if (typeof interval === "number") return isNaN(interval) ? SRS.INTERVAL.GOOD : interval;
 
-    // If it's a string, convert it to a number
-    if (typeof interval === "string") {
-      // Convert to number and handle potential NaN situations
-      const parsed = parseFloat(interval);
-      return isNaN(parsed) ? SRS.INTERVAL.GOOD : parsed;
+    try {
+      // Handle any type by converting to string first, then to number
+      const stringValue = String(interval);
+      const parsed = parseFloat(stringValue);
+      
+      // Check for NaN and return default if needed
+      if (isNaN(parsed)) {
+        console.warn("Unable to parse interval value:", interval, "type:", typeof interval);
+        return SRS.INTERVAL.GOOD;
+      }
+      
+      return parsed;
+    } catch (error) {
+      console.error("Error parsing interval:", error);
+      return SRS.INTERVAL.GOOD; // Safe fallback
     }
-
-    // Fallback to default value
-    return SRS.INTERVAL.GOOD;
   };
 
   // Helper function to calculate new interval based on progress and rating
@@ -256,19 +264,26 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
   ): number => {
     console.log("calculateInterval - existingProgress:", existingProgress);
     
-    const isFirstReview =
-      !existingProgress ||
-      existingProgress.reviews === undefined ||
-      existingProgress.reviews === null ||
-      existingProgress.reviews <= 0;
+    // Ensure reviews is a proper number for comparison
+    let reviewCount = 0;
+    if (existingProgress && existingProgress.reviews !== undefined && existingProgress.reviews !== null) {
+      // Handle string case (from API) or number case
+      reviewCount = typeof existingProgress.reviews === 'string' 
+        ? parseInt(existingProgress.reviews, 10) 
+        : existingProgress.reviews;
+      
+      // Handle NaN case
+      if (isNaN(reviewCount)) {
+        reviewCount = 0;
+      }
+    }
+    
+    const isFirstReview = !existingProgress || reviewCount <= 0;
     
     console.log(
-      "calculateInterval - isFirstReview check:",
-      "!existingProgress =", !existingProgress,
-      "existingProgress.reviews === undefined =", existingProgress ? (typeof existingProgress.reviews === "undefined") : "N/A",
-      "existingProgress.reviews === null =", existingProgress ? (existingProgress.reviews === null) : "N/A",
-      "existingProgress.reviews <= 0 =", existingProgress ? (typeof existingProgress.reviews !== "undefined" && existingProgress.reviews !== null ? existingProgress.reviews <= 0 : "N/A (undefined/null)") : "N/A",
-      "Final isFirstReview value:", isFirstReview
+      "calculateInterval - review count:", reviewCount,
+      "type:", typeof reviewCount,
+      "isFirstReview:", isFirstReview
     );
     
     const ease = existingProgress?.ease || SRS.EASE.DEFAULT;
@@ -664,17 +679,23 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
           interval: cardWithProgress.interval,
           ease: cardWithProgress.ease,
           reviews: typeof cardWithProgress.reviews === 'number' ? cardWithProgress.reviews : 
-                   (cardWithProgress.reviews === undefined ? 0 : parseInt(cardWithProgress.reviews as string, 10)),
+                   (cardWithProgress.reviews === undefined ? 0 : parseInt(String(cardWithProgress.reviews), 10)),
           lapses: cardWithProgress.lapses,
           nextReview: cardWithProgress.nextReview,
           lastReviewed: cardWithProgress.lastReviewed,
         }
       : null;
       
+    // Clean up any NaN review values
+    if (existingProgress && isNaN(existingProgress.reviews as number)) {
+      existingProgress.reviews = 0;
+    }
+    
     console.log("cardWithProgress.reviews:", cardWithProgress?.reviews, 
                 "type:", typeof cardWithProgress?.reviews, 
                 "existingProgress.reviews:", existingProgress?.reviews,
-                "type:", typeof existingProgress?.reviews);
+                "type:", typeof existingProgress?.reviews,
+                "isNaN:", existingProgress ? isNaN(existingProgress.reviews as number) : "N/A");
 
     console.log("getIntervalText - existingProgress being passed to calculateInterval:", 
       existingProgress, 
