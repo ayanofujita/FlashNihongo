@@ -31,9 +31,15 @@ export interface IStorage {
   // User Stats operations
   getUserStats(userId: number): Promise<UserStats | undefined>;
   createUserStats(stats: InsertUserStats): Promise<UserStats>;
-  updateUserStats(userId: number, stats: Partial<InsertUserStats>): Promise<UserStats | undefined>;
+  updateUserStats(
+    userId: number,
+    stats: Partial<InsertUserStats>,
+  ): Promise<UserStats | undefined>;
   updateStreak(userId: number): Promise<UserStats | undefined>;
-  incrementReviewStats(userId: number, correct: boolean): Promise<UserStats | undefined>;
+  incrementReviewStats(
+    userId: number,
+    correct: boolean,
+  ): Promise<UserStats | undefined>;
 
   // Deck operations
   getDecks(): Promise<Deck[]>;
@@ -72,7 +78,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, username));
     return user;
   }
 
@@ -82,7 +91,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByGoogleId(googleId: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.googleId, googleId));
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.googleId, googleId));
     return user;
   }
 
@@ -104,7 +116,10 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async updateUser(id: number, userUpdate: Partial<InsertUser>): Promise<User | undefined> {
+  async updateUser(
+    id: number,
+    userUpdate: Partial<InsertUser>,
+  ): Promise<User | undefined> {
     const [updatedUser] = await db
       .update(users)
       .set(userUpdate)
@@ -115,7 +130,10 @@ export class DatabaseStorage implements IStorage {
 
   // User Stats operations
   async getUserStats(userId: number): Promise<UserStats | undefined> {
-    const [stats] = await db.select().from(userStats).where(eq(userStats.userId, userId));
+    const [stats] = await db
+      .select()
+      .from(userStats)
+      .where(eq(userStats.userId, userId));
     return stats;
   }
 
@@ -126,7 +144,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateUserStats(
     userId: number,
-    statsUpdate: Partial<InsertUserStats>
+    statsUpdate: Partial<InsertUserStats>,
   ): Promise<UserStats | undefined> {
     const [updatedStats] = await db
       .update(userStats)
@@ -147,7 +165,7 @@ export class DatabaseStorage implements IStorage {
         totalCorrect: 0,
         currentStreak: 1,
         longestStreak: 1,
-        lastStudyDate: new Date().toISOString().split('T')[0],
+        lastStudyDate: new Date().toISOString().split("T")[0],
         cardsLearned: 0,
         studyTime: 0,
       });
@@ -156,7 +174,9 @@ export class DatabaseStorage implements IStorage {
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Start of today
 
-    const lastStudyDate = stats.lastStudyDate ? new Date(stats.lastStudyDate) : null;
+    const lastStudyDate = stats.lastStudyDate
+      ? new Date(stats.lastStudyDate)
+      : null;
     if (lastStudyDate) {
       lastStudyDate.setHours(0, 0, 0, 0); // Start of last study date
     }
@@ -192,11 +212,14 @@ export class DatabaseStorage implements IStorage {
     return await this.updateUserStats(userId, {
       currentStreak,
       longestStreak,
-      lastStudyDate: today.toISOString().split('T')[0],
+      lastStudyDate: today.toISOString().split("T")[0],
     });
   }
 
-  async incrementReviewStats(userId: number, correct: boolean): Promise<UserStats | undefined> {
+  async incrementReviewStats(
+    userId: number,
+    correct: boolean,
+  ): Promise<UserStats | undefined> {
     const stats = await this.getUserStats(userId);
     if (!stats) {
       // Create new stats if none exist
@@ -258,7 +281,10 @@ export class DatabaseStorage implements IStorage {
     }
 
     // Now delete the deck
-    const result = await db.delete(decks).where(eq(decks.id, id)).returning({ id: decks.id });
+    const result = await db
+      .delete(decks)
+      .where(eq(decks.id, id))
+      .returning({ id: decks.id });
     return result.length > 0;
   }
 
@@ -286,10 +312,7 @@ export class DatabaseStorage implements IStorage {
     const existingCards = await db
       .select()
       .from(cards)
-      .where(and(
-        eq(cards.deckId, deckId),
-        eq(cards.front, front)
-      ));
+      .where(and(eq(cards.deckId, deckId), eq(cards.front, front)));
 
     return existingCards.length > 0;
   }
@@ -298,7 +321,9 @@ export class DatabaseStorage implements IStorage {
     // Check if card with same front text already exists in the deck
     const exists = await this.checkCardExists(card.deckId, card.front);
     if (exists) {
-      throw new Error(`Card with text "${card.front}" already exists in this deck`);
+      throw new Error(
+        `Card with text "${card.front}" already exists in this deck`,
+      );
     }
 
     const [newCard] = await db.insert(cards).values(card).returning();
@@ -316,9 +341,14 @@ export class DatabaseStorage implements IStorage {
       if (currentCard) {
         // If front text changed, check for duplicates
         if (currentCard.front !== cardUpdate.front) {
-          const exists = await this.checkCardExists(currentCard.deckId, cardUpdate.front);
+          const exists = await this.checkCardExists(
+            currentCard.deckId,
+            cardUpdate.front,
+          );
           if (exists) {
-            throw new Error(`Card with text "${cardUpdate.front}" already exists in this deck`);
+            throw new Error(
+              `Card with text "${cardUpdate.front}" already exists in this deck`,
+            );
           }
         }
       }
@@ -334,9 +364,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteCard(id: number): Promise<boolean> {
     // First delete all study progress related to this card
-    await db
-      .delete(studyProgress)
-      .where(eq(studyProgress.cardId, id));
+    await db.delete(studyProgress).where(eq(studyProgress.cardId, id));
 
     // Now delete the card
     const result = await db
@@ -355,11 +383,38 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(studyProgress)
       .where(
-        and(
-          eq(studyProgress.userId, userId),
-          eq(studyProgress.cardId, cardId)
-        )
+        and(eq(studyProgress.userId, userId), eq(studyProgress.cardId, cardId)),
       );
+    
+    // Return undefined if no progress is found
+    if (!progress) return undefined;
+    
+    // Convert interval from string to number for consistent typing
+    if (progress.interval) {
+      // Store original value for logging
+      const originalInterval = progress.interval;
+      
+      // We need to modify the progress object but keep TypeScript happy
+      // by treating it as a mutable object with a typed index signature
+      const mutableProgress = progress as unknown as { [key: string]: any };
+      
+      // Parse the string interval to a number
+      try {
+        // Convert the interval string to a number
+        const numericInterval = parseFloat(String(originalInterval));
+        
+        // Ensure it's a valid number
+        if (!isNaN(numericInterval)) {
+          mutableProgress.interval = numericInterval;
+          console.log(`getStudyProgress: converted interval from "${originalInterval}" (${typeof originalInterval}) to ${numericInterval} (${typeof numericInterval})`);
+        } else {
+          console.warn(`getStudyProgress: invalid interval value "${originalInterval}", keeping as is`);
+        }
+      } catch (error) {
+        console.error(`Error converting interval "${originalInterval}":`, error);
+      }
+    }
+    
     return progress;
   }
 
@@ -368,7 +423,9 @@ export class DatabaseStorage implements IStorage {
     deckIds: number[],
   ): Promise<Card[]> {
     const now = new Date();
-    console.log(`Checking cards in decks [${deckIds.join(', ')}] for user ${userId}`);
+    console.log(
+      `Checking cards in decks [${deckIds.join(", ")}] for user ${userId}`,
+    );
 
     // Get all cards from specified decks
     const deckCards = await db
@@ -386,12 +443,13 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(studyProgress.userId, userId),
-            eq(studyProgress.cardId, card.id)
-          )
+            eq(studyProgress.cardId, card.id),
+          ),
         );
 
       // Check if the card is due for review
-      const isDue = !progress || !progress.nextReview || progress.nextReview <= now;
+      const isDue =
+        !progress || !progress.nextReview || progress.nextReview <= now;
 
       // Log for debugging purposes
       if (progress) {
@@ -399,30 +457,48 @@ export class DatabaseStorage implements IStorage {
           ? progress.nextReview.toISOString()
           : "undefined";
         console.log(
-          `Card ${card.id} - nextReview: ${nextReviewDate}, isDue: ${isDue}, now: ${now.toISOString()}`
+          `Card ${card.id} - nextReview: ${nextReviewDate}, isDue: ${isDue}, now: ${now.toISOString()}`,
         );
       } else {
         console.log(`Card ${card.id} - No progress record, consider due`);
       }
 
       if (isDue) {
-        // Convert interval string to number
-        const intervalValue = progress?.interval ? parseFloat(progress.interval) : 0;
-        
+        // Convert interval value to a number if it exists
+        let intervalValue = 0;
+        if (progress?.interval) {
+          // Handle the case where interval is a string
+          try {
+            const stringInterval = String(progress.interval);
+            intervalValue = parseFloat(stringInterval);
+            if (isNaN(intervalValue)) {
+              console.warn(`Invalid interval value "${stringInterval}" for card ${card.id}, defaulting to 0`);
+              intervalValue = 0;
+            } else {
+              console.log(`Card ${card.id} - converted interval from "${progress.interval}" to number: ${intervalValue}`);
+            }
+          } catch (error) {
+            console.error(`Error parsing interval for card ${card.id}:`, error);
+            intervalValue = 0;
+          }
+        }
+
         // Combine card with progress data for the frontend to access
         const cardWithProgress = {
           ...card,
           // Add progress fields if they exist
-          interval: intervalValue, // Use the converted numeric value
+          interval: intervalValue, // Use the properly converted interval
           ease: progress?.ease || 250, // Default ease
           reviews: progress?.reviews || 0,
           lapses: progress?.lapses || 0,
-          nextReview: progress?.nextReview ? progress.nextReview.toISOString() : null,
-          lastReviewed: progress?.lastReviewed ? progress.lastReviewed.toISOString() : null,
+          nextReview: progress?.nextReview
+            ? progress.nextReview.toISOString()
+            : null,
+          lastReviewed: progress?.lastReviewed
+            ? progress.lastReviewed.toISOString()
+            : null,
         };
-        
-        console.log(`Card ${card.id} - interval from DB: ${progress?.interval}, converted to number: ${intervalValue}`);
-        
+
         dueCards.push(cardWithProgress);
       }
     }
@@ -453,14 +529,16 @@ export class DatabaseStorage implements IStorage {
         // Update existing progress
         // Create a properly typed update object for Drizzle with explicit typing
         const typedUpdateData: Record<string, any> = {
-          lastReviewed: now
+          lastReviewed: now,
         };
 
         // Only include fields that are present in the update
         if (update.ease !== undefined) typedUpdateData.ease = update.ease;
-        if (update.reviews !== undefined) typedUpdateData.reviews = update.reviews;
+        if (update.reviews !== undefined)
+          typedUpdateData.reviews = update.reviews;
         if (update.lapses !== undefined) typedUpdateData.lapses = update.lapses;
-        if (update.nextReview !== undefined) typedUpdateData.nextReview = update.nextReview;
+        if (update.nextReview !== undefined)
+          typedUpdateData.nextReview = update.nextReview;
 
         // Handle interval - always store as string in DB but ensure it's a valid number
         if (update.interval !== undefined) {
@@ -469,7 +547,10 @@ export class DatabaseStorage implements IStorage {
           typedUpdateData.interval = validInterval.toFixed(2); // Store with 2 decimal places
         }
 
-        console.log(`Updating existing progress with data:`, JSON.stringify(typedUpdateData));
+        console.log(
+          `Updating existing progress with data:`,
+          JSON.stringify(typedUpdateData),
+        );
 
         const [updatedProgress] = await db
           .update(studyProgress)
@@ -477,13 +558,13 @@ export class DatabaseStorage implements IStorage {
           .where(
             and(
               eq(studyProgress.userId, userId),
-              eq(studyProgress.cardId, cardId)
-            )
+              eq(studyProgress.cardId, cardId),
+            ),
           )
           .returning();
 
         console.log(
-          `Progress updated for card ${cardId}, next review: ${updatedProgress.nextReview?.toISOString()}, interval: ${updatedProgress.interval}, ease: ${updatedProgress.ease}`
+          `Progress updated for card ${cardId}, next review: ${updatedProgress.nextReview?.toISOString()}, interval: ${updatedProgress.interval}, ease: ${updatedProgress.ease}`,
         );
 
         return updatedProgress;
@@ -492,7 +573,9 @@ export class DatabaseStorage implements IStorage {
         // Handle the interval value - make sure it's always a numeric value for storage
         let intervalValue = 0;
         if (update.interval !== undefined) {
-          console.log(`NEW PROGRESS INTERVAL - original value: ${update.interval}, type: ${typeof update.interval}`);
+          console.log(
+            `NEW PROGRESS INTERVAL - original value: ${update.interval}, type: ${typeof update.interval}`,
+          );
 
           // Ensure we have a number value
           const numericInterval = Number(update.interval);
@@ -500,7 +583,9 @@ export class DatabaseStorage implements IStorage {
           // Make sure we have a valid number, not NaN
           intervalValue = isNaN(numericInterval) ? 0 : numericInterval;
 
-          console.log(`NEW PROGRESS INTERVAL - converted to number: ${intervalValue}`);
+          console.log(
+            `NEW PROGRESS INTERVAL - converted to number: ${intervalValue}`,
+          );
         }
 
         const insertData = {
@@ -514,7 +599,10 @@ export class DatabaseStorage implements IStorage {
           nextReview: update.nextReview || now,
         };
 
-        console.log(`Creating new progress with data:`, JSON.stringify(insertData));
+        console.log(
+          `Creating new progress with data:`,
+          JSON.stringify(insertData),
+        );
 
         const newProgressResult = await db
           .insert(studyProgress)
@@ -524,13 +612,16 @@ export class DatabaseStorage implements IStorage {
         const newProgress = newProgressResult[0];
 
         console.log(
-          `New progress created for card ${cardId}, next review: ${newProgress.nextReview?.toISOString()}`
+          `New progress created for card ${cardId}, next review: ${newProgress.nextReview?.toISOString()}`,
         );
 
         return newProgress;
       }
     } catch (error) {
-      console.error(`Error in updateStudyProgress for card ${cardId}, user ${userId}:`, error);
+      console.error(
+        `Error in updateStudyProgress for card ${cardId}, user ${userId}:`,
+        error,
+      );
       throw error;
     }
   }
