@@ -268,7 +268,6 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     existingProgress: StudyProgressType | null,
     modifier: number = 1,
   ): number => {
-
     // Ensure reviews is a proper number for comparison
     let reviewCount = 0;
     if (
@@ -306,7 +305,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     const baseInterval = parseInterval(existingProgress?.interval);
 
     // For first reviews of new cards
-    if (isFirstReview) {
+    if (isFirstReview || baseInterval == 0) {
       console.log("FIRST REVIEW");
       switch (rating) {
         case "again":
@@ -661,7 +660,7 @@ const StudyMode = ({ deckId }: StudyModeProps) => {
     if (minutes < 60) {
       return `${minutes}m`;
     }
-    
+
     // Convert to hours
     const hours = Math.round(adjustedInterval * 24);
 
