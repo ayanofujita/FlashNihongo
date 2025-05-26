@@ -1,4 +1,3 @@
-
 # NihongoFlash 🇯🇵
 
 A modern Japanese learning flashcard application with spaced repetition, quizzes, and dictionary integration. Built with React, Express, and PostgreSQL.
@@ -30,42 +29,69 @@ A modern Japanese learning flashcard application with spaced repetition, quizzes
 
 ## Getting Started
 
-### Prerequisites
+### Local Development Setup
+
+#### Prerequisites
 
 - Node.js (v18 or higher)
 - PostgreSQL database
 - Google OAuth credentials
 
-### Environment Variables
+#### Installation
 
-Create a `.env` file in the root directory with:
-
-```env
-DATABASE_URL=your_postgresql_connection_string
-SESSION_SECRET=your_session_secret
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-```
-
-### Installation
-
-1. Clone the repository
-2. Install dependencies:
+1. **Clone the repository**:
    ```bash
-   npm install
+   git clone <repository-url>
+   cd nihongoflash
    ```
 
-3. Set up the database:
+2. **Install dependencies**:
+   ```bash
+   npm install
+   npm install dotenv
+   ```
+
+3. **Set up environment variables**:
+   Create a `.env` file in the root directory:
+   ```env
+   DATABASE_URL=your_postgresql_connection_string
+   SESSION_SECRET=your_session_secret
+   GOOGLE_CLIENT_ID=your_google_client_id
+   GOOGLE_CLIENT_SECRET=your_google_client_secret
+   ```
+
+4. **Configure dotenv** (add to `server/db.ts`):
+   ```typescript
+   import 'dotenv/config';
+   ```
+
+5. **Set up Google OAuth**:
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select existing one
+   - Enable Google+ API
+   - Create OAuth 2.0 credentials
+   - Add `http://localhost:5000` to authorized origins
+   - Add `http://localhost:5000/auth/google/callback` to redirect URIs
+
+6. **Set up the database**:
    ```bash
    npm run db:push
    ```
 
-4. Start the development server:
+7. **Start the development server**:
    ```bash
    npm run dev
    ```
 
 The application will be available at `http://localhost:5000`
+
+### Replit Setup (Alternative)
+
+1. **Fork this Repl** or create a new Repl and import this repository
+2. **Create a PostgreSQL database** using Replit's Database tool
+3. **Configure environment variables** in Replit's Secrets tool
+4. **Set up Google OAuth** with your Replit domain
+5. **Click the Run button** to start the application
 
 ## Usage
 
